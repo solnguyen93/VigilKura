@@ -29,6 +29,7 @@ const NavBar = () => {
                 </>
             ) : (
                 <nav>
+                    <Link to="/">VigilKura</Link>
                     {location.pathname === '/' && <Link to="/vigilkura">Sign In</Link>}
                     {location.pathname === '/vigilkura' && <Link to="/">About</Link>}
                 </nav>
