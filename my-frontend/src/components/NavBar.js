@@ -30,9 +30,7 @@ const NavBar = () => {
             ) : (
                 <>
                     <div className="leftNav"><Link to="/">VigilKura</Link></div>
-                    {location.pathname !== '/vigilkura' && (
-                        <div className="rightNav"><Link to="/vigilkura">Sign In</Link></div>
-                    )}
+                    <div className="rightNav"><Link to="/vigilkura">Sign In</Link></div>
                 </>
             )}
         </nav>
