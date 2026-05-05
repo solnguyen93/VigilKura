@@ -1,5 +1,8 @@
 import React from 'react';
 import { Box, Typography, Divider, Paper } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
+import IconButton from '@mui/material/IconButton';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import MicOutlinedIcon from '@mui/icons-material/MicOutlined';
 import StorageOutlinedIcon from '@mui/icons-material/StorageOutlined';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
@@ -16,9 +19,14 @@ const Section = ({ icon, title, children }) => (
     </Box>
 );
 
-const Landing = () => (
+const Landing = () => {
+    const navigate = useNavigate();
+    return (
     <Box sx={{ maxWidth: 680, mx: 'auto', mt: 4, p: 3 }}>
-        <Typography variant="h4" sx={{ mb: 0.5 }}>VigilKura</Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+            <IconButton size="small" onClick={() => navigate(-1)}><ArrowBackIcon /></IconButton>
+            <Typography variant="h4">VigilKura</Typography>
+        </Box>
         <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
             A simple tool to help parents stay aware of what their kids are saying during screen time.
         </Typography>
@@ -87,6 +95,7 @@ const Landing = () => (
             VigilKura is provided as-is. The developer is not liable for missed detections, false alerts, or how this tool is used.
         </Typography>
     </Box>
-);
+    );
+};
 
 export default Landing;

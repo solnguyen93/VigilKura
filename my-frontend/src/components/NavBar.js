@@ -28,11 +28,12 @@ const NavBar = () => {
                     )}
                 </>
             ) : (
-                <nav>
-                    <Link to="/">VigilKura</Link>
-                    {location.pathname === '/' && <Link to="/vigilkura">Sign In</Link>}
-                    {location.pathname === '/vigilkura' && <Link to="/">About</Link>}
-                </nav>
+                <>
+                    <div className="leftNav"><Link to="/">VigilKura</Link></div>
+                    {location.pathname !== '/vigilkura' && (
+                        <div className="rightNav"><Link to="/vigilkura">Sign In</Link></div>
+                    )}
+                </>
             )}
         </nav>
     );
