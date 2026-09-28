@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../AuthContext';
 import VigilKuraApi from '../api.js';
 import {
-    Box, Typography, Paper, List, ListItem, ListItemText,
+    Box, Typography, Paper, List, ListItem,
     Collapse, Chip, Divider, CircularProgress, IconButton, Tabs, Tab,
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { TextField, Button, Box, Alert, Divider, Typography, Select, MenuItem, InputAdornment, FormControlLabel, Checkbox, Link } from '@mui/material';
+import { TextField, Button, Box, Alert, Typography, Select, MenuItem, InputAdornment, FormControlLabel, Checkbox, Link } from '@mui/material';
 import VigilKuraApi from '../api.js';
 
 const COUNTRY_CODES = [

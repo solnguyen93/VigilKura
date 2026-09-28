@@ -81,7 +81,6 @@ const Settings = () => {
 
     // Save state and refs
     const [saveMsg, setSaveMsg] = useState('');
-    const [saving, setSaving] = useState(false);
     const autoSaveTimer = useRef(null);
     const isLoadingRef = useRef(false); // Prevents auto-save from firing during initial settings load
 
@@ -91,7 +90,6 @@ const Settings = () => {
     // Persist settings to the backend for the selected child
     const doSave = useCallback(async (settings, child) => {
         if (!child) return;
-        setSaving(true);
         try {
             const updated = await VigilKuraApi.updateChildSettings(child.id, settings);
             // Merge updated settings back into local children state
@@ -99,8 +97,6 @@ const Settings = () => {
             setChildren((prev) => prev.map((c) => (c.id === child.id ? merged : c)));
         } catch (err) {
             setSaveMsg(err.response?.data?.message || 'Error saving.');
-        } finally {
-            setSaving(false);
         }
     }, []);
 

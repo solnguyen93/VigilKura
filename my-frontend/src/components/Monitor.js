@@ -52,7 +52,7 @@ const containsBadWord = (text, wordList) => {
         wordList.find((word) => {
             const normalized = word.normalize('NFC');
             const escaped = normalized.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-            const isAscii = /^[\x00-\x7F]+$/.test(normalized);
+            const isAscii = [...normalized].every((ch) => ch.charCodeAt(0) <= 0x7f);
             const pattern = isAscii ? new RegExp(`\\b${escaped}\\b`, 'i') : new RegExp(escaped, 'i');
             return pattern.test(lower);
         }) || null
@@ -164,7 +164,6 @@ const Monitor = () => {
     const navigate = useNavigate();
 
     const [isListening, setIsListening] = useState(false);
-    const [transcript, setTranscript] = useState('');
     const [sessionSeconds, setSessionSeconds] = useState(0);
 
     const [alerts, setAlerts] = useState([]);
@@ -194,7 +193,8 @@ const Monitor = () => {
     const [devInput, setDevInput] = useState('');
 
     // Prefix localStorage keys per user so different accounts don't share data
-    const lsKey = (key) => `${user?.username}:${key}`;
+    const username = user?.username;
+    const lsKey = useCallback((key) => `${username}:${key}`, [username]);
 
     const recognitionRef = useRef(null);
     const timerRef = useRef(null);
@@ -233,7 +233,7 @@ const Monitor = () => {
         } finally {
             setLoadingLastSession(false);
         }
-    }, []);
+    }, [lsKey]);
 
     // On mount: check speech recognition support, load children, restore last session
     useEffect(() => {
@@ -259,7 +259,7 @@ const Monitor = () => {
         if (savedSessionId) fetchLastSession(savedSessionId);
 
         return () => clearInterval(timerRef.current);
-    }, [user, navigate, fetchLastSession]);
+    }, [user, navigate, fetchLastSession, lsKey]);
 
     // Block browser back button and warn on tab close while in Kid Mode
     useEffect(() => {
@@ -285,13 +285,12 @@ const Monitor = () => {
             window.removeEventListener('popstate', handlePopState);
             window.removeEventListener('beforeunload', handleBeforeUnload);
         };
-    }, [kidMode]);
+    }, [kidMode, selectedChild?.name]);
 
     // Handle a final speech recognition result — save transcript and check for bad words
     const processTranscript = (text) => {
         const trimmed = text.trim();
         if (!trimmed || !sessionIdRef.current) return;
-        setTranscript(trimmed);
         VigilKuraApi.addTranscript(sessionIdRef.current, trimmed).catch(console.error);
         if (!wordDetectionEnabledRef.current) return;
 
@@ -395,13 +394,10 @@ const Monitor = () => {
         recognition.lang = 'en-US';
 
         recognition.onresult = (event) => {
-            let interimTranscript = '';
-            let finalTranscript = '';
-
             for (let i = event.resultIndex; i < event.results.length; i++) {
                 const text = event.results[i][0].transcript;
+                // Interim results are ignored — only final results are saved and checked
                 if (event.results[i].isFinal) {
-                    finalTranscript += text;
                     if (sessionIdRef.current && text.trim()) {
                         VigilKuraApi.addTranscript(sessionIdRef.current, text.trim()).catch(console.error);
                     }
@@ -432,11 +428,8 @@ const Monitor = () => {
                             }
                         }
                     }
-                } else {
-                    interimTranscript += text;
                 }
             }
-            setTranscript(finalTranscript || interimTranscript);
         };
 
         recognition.onerror = (event) => console.error('Speech recognition error:', event.error);
@@ -495,7 +488,6 @@ const Monitor = () => {
 
         setIsListening(false);
         setKidMode(false);
-        setTranscript('');
         setPin('');
         setPinError('');
         setShowWarningBanner(false);
