@@ -59,7 +59,7 @@ class User {
     static async getUserByUsername(username) {
         const result = await pool.query(
             `SELECT id, name, username, email, phone,
-                    is_admin AS "isAdmin", settings, pin,
+                    is_admin AS "isAdmin", settings,
                     pin IS NOT NULL AS "hasPin"
              FROM users
              WHERE username = $1`,
@@ -72,6 +72,9 @@ class User {
     static async update(username, data) {
         if (data.password) {
             data.password = await bcrypt.hash(data.password, BCRYPT_WORK_FACTOR);
+        }
+        if (data.pin) {
+            data.pin = await bcrypt.hash(String(data.pin), BCRYPT_WORK_FACTOR);
         }
 
         const { name, email, phone, password: hashedPass, pin: hashedPin, settings, removePin } = data;
@@ -88,7 +91,7 @@ class User {
                      settings = COALESCE($6::jsonb, settings)
                  WHERE username = $7
                  RETURNING id, name, username, email, phone,
-                           is_admin AS "isAdmin", settings, pin,
+                           is_admin AS "isAdmin", settings,
                            pin IS NOT NULL AS "hasPin"`,
                 [name || null, email || null, phone || null, hashedPass || null,
                  hashedPin || null, settings ? JSON.stringify(settings) : null,
@@ -103,10 +106,19 @@ class User {
     }
 
     static async verifyPin(username, pin) {
-        const result = await pool.query(`SELECT pin FROM users WHERE username = $1`, [username]);
+        const result = await pool.query(`SELECT id, pin FROM users WHERE username = $1`, [username]);
         const user = result.rows[0];
         if (!user || !user.pin) throw new BadRequestError('No PIN set for this account');
-        if (pin !== user.pin) throw new UnauthorizedError('Incorrect PIN');
+        if (!pin) throw new UnauthorizedError('Incorrect PIN');
+
+        // PINs saved before hashing was added are plain text — accept them once, then store the hash
+        const isHashed = user.pin.startsWith('$2');
+        const isValid = isHashed ? await bcrypt.compare(String(pin), user.pin) : String(pin) === user.pin;
+        if (!isValid) throw new UnauthorizedError('Incorrect PIN');
+        if (!isHashed) {
+            const hashedPin = await bcrypt.hash(String(pin), BCRYPT_WORK_FACTOR);
+            await pool.query(`UPDATE users SET pin = $1 WHERE id = $2`, [hashedPin, user.id]);
+        }
         return { success: true };
     }
 

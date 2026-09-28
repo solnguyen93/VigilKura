@@ -34,14 +34,20 @@ const COUNTRY_CODES = [
 ];
 
 
+// Shown in place of the PIN — the real PIN is hashed and never sent to the browser
+const MASKED_PIN = '••••';
+
+// Display-only values that should start the editor empty
+const toDraft = (value) => (value === '—' || value === MASKED_PIN ? '' : value);
+
 // Inline editable field — shows as text, click to edit
 const InlineField = ({ label, value, onSave, inputProps = {}, transform, placeholder, validate }) => {
     const [editing, setEditing] = useState(false);
-    const [draft, setDraft] = useState(value);
+    const [draft, setDraft] = useState(toDraft(value));
     const [hovered, setHovered] = useState(false);
     const [error, setError] = useState('');
 
-    useEffect(() => { setDraft(value === '—' ? '' : value); }, [value]);
+    useEffect(() => { setDraft(toDraft(value)); }, [value]);
 
     const handleSave = () => {
         if (validate) {
@@ -54,7 +60,7 @@ const InlineField = ({ label, value, onSave, inputProps = {}, transform, placeho
     };
 
     const handleCancel = () => {
-        setDraft(value);
+        setDraft(toDraft(value));
         setEditing(false);
         setError('');
     };
@@ -125,7 +131,6 @@ const Profile = () => {
     const [confirmPassword, setConfirmPassword] = useState('');
     const [passwordMsg, setPasswordMsg] = useState(null);
 
-    const [currentPin, setCurrentPin] = useState('');
     const [pinMsg, setPinMsg] = useState(null);
     const [hasPin, setHasPin] = useState(false);
 
@@ -158,7 +163,6 @@ const Profile = () => {
             setPhone(rawPhone);
         }
         setHasPin(data.hasPin);
-        setCurrentPin(data.pin || '');
         setPreferredLanguage(data.settings?.preferredLanguage || 'English');
         setChildren(kids);
         return data;
@@ -284,23 +288,31 @@ const Profile = () => {
         }
     };
 
-    // Set or remove the Monitor PIN — passing an empty value removes it
-    const handleSavePin = async (val) => {
-        const cleaned = (val === '—' ? '' : val).trim();
-        if (cleaned && !/^\d{4}$/.test(cleaned)) {
-            setPinMsg({ text: 'PIN must be exactly 4 digits.', error: true }); return;
-        }
+    // Send a PIN change to the backend — { pin } sets it, { removePin: true } clears it
+    const updatePin = async (data, successText) => {
         try {
-            const updated = await VigilKuraApi.updateUser(username, cleaned ? { pin: cleaned } : { removePin: true });
+            const updated = await VigilKuraApi.updateUser(username, data);
             syncToken(updated);
-            setCurrentPin(cleaned);
             setHasPin(updated.hasPin);
             setUser((prev) => ({ ...prev, hasPin: updated.hasPin }));
-            setPinMsg({ text: cleaned ? 'PIN updated.' : 'PIN removed.', error: false });
+            setPinMsg({ text: successText, error: false });
         } catch (err) {
             setPinMsg({ text: err.response?.data?.message || 'Failed to update PIN.', error: true });
         }
     };
+
+    // Set a new Monitor PIN — a blank save is ignored so the PIN can't be cleared by accident
+    const handleSavePin = (val) => {
+        const cleaned = toDraft(val).trim();
+        if (!cleaned) return;
+        if (!/^\d{4}$/.test(cleaned)) {
+            setPinMsg({ text: 'PIN must be exactly 4 digits.', error: true }); return;
+        }
+        updatePin({ pin: cleaned }, 'PIN updated.');
+    };
+
+    // Remove the Monitor PIN — stopping Kid Mode will then ask for the account password
+    const handleRemovePin = () => updatePin({ removePin: true }, 'PIN removed.');
 
     // Save the parent's preferred translate language — used for AI summary and transcript translation
     const handleSaveLanguage = async (lang) => {
@@ -430,14 +442,23 @@ const Profile = () => {
             <Divider sx={{ my: 3 }} />
 
             {/* Monitor PIN */}
-            <InlineField
-                label="Monitor PIN"
-                value={hasPin ? currentPin : '—'}
-                onSave={handleSavePin}
-                inputProps={{ maxLength: 4, inputMode: 'numeric' }}
-                transform={(v) => v.replace(/\D/g, '').slice(0, 4)}
-                placeholder="Leave blank to use password instead"
-            />
+            <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
+                <Box sx={{ flex: 1 }}>
+                    <InlineField
+                        label="Monitor PIN"
+                        value={hasPin ? MASKED_PIN : '—'}
+                        onSave={handleSavePin}
+                        inputProps={{ maxLength: 4, inputMode: 'numeric' }}
+                        transform={(v) => v.replace(/\D/g, '').slice(0, 4)}
+                        placeholder={hasPin ? 'Enter a new 4-digit PIN' : 'Not set — password is used instead'}
+                    />
+                </Box>
+                {hasPin && (
+                    <Button size="small" color="inherit" sx={{ mt: 0.25 }} onClick={handleRemovePin}>
+                        Remove
+                    </Button>
+                )}
+            </Box>
             {pinMsg && (
                 <Alert severity={pinMsg.error ? 'error' : 'success'} sx={{ mb: 2 }} onClose={() => setPinMsg(null)}>
                     {pinMsg.text}

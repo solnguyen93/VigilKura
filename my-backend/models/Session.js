@@ -7,14 +7,24 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 class Session {
     // Start a new monitoring session for a user and optional child
+    // The child is only linked if it belongs to this user
     static async start(userId, childId = null) {
         const result = await pool.query(
             `INSERT INTO sessions (user_id, child_id, started_at)
-             VALUES ($1, $2, NOW())
+             VALUES ($1, (SELECT id FROM children WHERE id = $2 AND parent_id = $1), NOW())
              RETURNING *`,
             [userId, childId || null],
         );
         return result.rows[0];
+    }
+
+    // Throw NotFoundError unless the session exists and belongs to this user
+    static async ensureOwner(sessionId, userId) {
+        const result = await pool.query(
+            `SELECT id FROM sessions WHERE id = $1 AND user_id = $2`,
+            [sessionId, userId],
+        );
+        if (!result.rows[0]) throw new NotFoundError(`No session: ${sessionId}`);
     }
 
     // End a session — sets ended_at and duration, translates transcript if language is non-English

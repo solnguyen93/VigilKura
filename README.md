@@ -1,18 +1,18 @@
 # VigilKura
 
-A parental monitoring tool that listens through the device microphone during screen time and alerts parents when flagged words are detected. Sessions are logged with transcripts, detections, and optional email/SMS notifications.
+A web app that listens through the browser microphone during a child's screen time and texts or emails parents when it hears words they've flagged. Parents set a word list and a screen-time timer for each child. Kid Mode takes over the browser tab so the session can't be stopped without a PIN, and the parent is alerted if the tab is closed. Parents can review past sessions as transcripts, optionally translated into their own language with OpenAI.
 
 ## Features
 
-- Real-time word detection via browser speech recognition (Chrome)
+- Real-time word detection via browser speech recognition (Chrome, English)
 - Custom word list per child with default profanity list
-- Email and SMS alerts on detection or screen time limit reached
+- Email and SMS alerts on detection or when the session time limit is reached
 - Configurable minimum time between alerts to prevent notification spam
 - Parent notified if the browser tab is closed during an active session
-- Screen time limits with countdown warnings
-- Session history with searchable transcripts
+- Per-session screen time limit with a warning before time is up
+- Session history with full transcripts, filterable by child and time period
 - Multi-child support with per-child settings
-- Kid Mode — locks the screen and blocks navigation during monitoring
+- Kid Mode — takes over the browser tab, hides results, and blocks the back button during monitoring
 - PIN or password required to stop monitoring
 - Transcript translation at session end (OpenAI)
 - Forgot/reset password via email
@@ -80,6 +80,12 @@ TWILIO_AUTH_TOKEN=your_twilio_token
 TWILIO_MESSAGING_SERVICE_SID=your_messaging_service_sid
 ```
 
+The frontend reads the backend URL from `my-frontend/.env` (defaults to `http://localhost:5000` if unset). Copy the example to get started:
+
+```bash
+cp my-frontend/.env.example my-frontend/.env
+```
+
 ### 4. Install dependencies and start
 
 **Backend:**
@@ -117,11 +123,11 @@ A test account is available on the sign-in page:
 | email | text | unique |
 | password | text | bcrypt hashed |
 | phone | varchar | optional, for SMS |
-| pin | varchar | optional 4-digit monitor PIN |
+| pin | varchar | optional 4-digit monitor PIN, bcrypt hashed |
 | is_admin | boolean | default false |
-| settings | jsonb | notification + translation preferences |
+| settings | jsonb | translation language preference |
 | reset_token | text | for password reset |
-| reset_token_expires | timestamptz | |
+| reset_token_expires | timestamp | |
 
 ### children
 | Column | Type | Notes |
@@ -130,7 +136,7 @@ A test account is available on the sign-in page:
 | parent_id | integer | references users.id |
 | name | text | |
 | settings | jsonb | word list, screen time, notification settings |
-| created_at | timestamptz | |
+| created_at | timestamp | |
 
 ### sessions
 | Column | Type | Notes |
@@ -138,8 +144,8 @@ A test account is available on the sign-in page:
 | id | serial | primary key |
 | user_id | integer | references users.id |
 | child_id | integer | references children.id |
-| started_at | timestamptz | |
-| ended_at | timestamptz | |
+| started_at | timestamp | |
+| ended_at | timestamp | |
 | duration_seconds | integer | |
 | translated_transcript | jsonb | array of translated strings |
 | translated_language | varchar | language used for translation |
@@ -152,7 +158,7 @@ A test account is available on the sign-in page:
 | user_id | integer | references users.id |
 | word | text | flagged word |
 | context | text | sentence it appeared in |
-| detected_at | timestamptz | |
+| detected_at | timestamp | |
 
 ### transcripts
 | Column | Type | Notes |
@@ -160,7 +166,7 @@ A test account is available on the sign-in page:
 | id | serial | primary key |
 | session_id | integer | references sessions.id |
 | text | text | one speech recognition result |
-| recorded_at | timestamptz | |
+| recorded_at | timestamp | |
 
 ## Notes
 

@@ -1,6 +1,8 @@
--- Drop existing tables if they exist
+-- Drop existing tables if they exist (dependents first)
+DROP TABLE IF EXISTS transcripts;
 DROP TABLE IF EXISTS detections;
 DROP TABLE IF EXISTS sessions;
+DROP TABLE IF EXISTS children;
 DROP TABLE IF EXISTS users;
 
 -- Create Users Table
@@ -49,4 +51,12 @@ CREATE TABLE detections (
     word VARCHAR(100) NOT NULL,
     context TEXT,
     detected_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+-- Create Transcripts Table (each final speech recognition result within a session)
+CREATE TABLE transcripts (
+    id SERIAL PRIMARY KEY,
+    session_id INTEGER NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
+    text TEXT NOT NULL,
+    recorded_at TIMESTAMP NOT NULL DEFAULT NOW()
 );

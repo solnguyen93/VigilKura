@@ -269,8 +269,9 @@ const Monitor = () => {
             e.preventDefault();
             e.returnValue = '';
             if (sessionIdRef.current) {
+                // sendBeacon can't set headers, so the JWT goes in the body
                 const params = new URLSearchParams({
-                    username: user.username,
+                    token: localStorage.getItem('token') || '',
                     childName: selectedChild?.name || '',
                     notify: wordNotifyChannelRef.current || '',
                 });
@@ -309,7 +310,7 @@ const Monitor = () => {
         const cooldownMs = (notifCooldownRef.current ?? 5) * 60 * 1000;
         const canNotify = !lastNotifTimeRef.current || now - lastNotifTimeRef.current >= cooldownMs;
         if (canNotify && wordNotifyChannelRef.current) lastNotifTimeRef.current = now;
-        VigilKuraApi.addDetection(sessionIdRef.current, user.username, badWord, trimmed, selectedChild?.name, canNotify ? wordNotifyChannelRef.current : null).catch(
+        VigilKuraApi.addDetection(sessionIdRef.current, badWord, trimmed, selectedChild?.name, canNotify ? wordNotifyChannelRef.current : null).catch(
             console.error,
         );
     };
@@ -343,7 +344,7 @@ const Monitor = () => {
                     }
                     const channel = getNotifyChannel(settings.timeUpEmail, settings.timeUpSms);
                     if (channel) {
-                        VigilKuraApi.notifyTimeUp(user.username, selectedChild?.name, channel).catch(console.error);
+                        VigilKuraApi.notifyTimeUp(selectedChild?.name, channel).catch(console.error);
                     }
                 }
 
@@ -354,7 +355,7 @@ const Monitor = () => {
 
     const startListening = async () => {
         try {
-            const session = await VigilKuraApi.startSession(user.username, selectedChild?.id || null);
+            const session = await VigilKuraApi.startSession(selectedChild?.id || null);
             sessionIdRef.current = session.id;
         } catch (error) {
             console.error('Failed to start session:', error);
@@ -423,7 +424,6 @@ const Monitor = () => {
                                 if (canNotify && wordNotifyChannel) lastNotifTimeRef.current = now;
                                 VigilKuraApi.addDetection(
                                     sessionIdRef.current,
-                                    user.username,
                                     badWord,
                                     trimmed,
                                     selectedChild?.name,

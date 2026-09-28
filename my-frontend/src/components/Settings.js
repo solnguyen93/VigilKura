@@ -378,14 +378,14 @@ const Settings = () => {
                     <Switch checked={durationEnabled} onChange={(e) => setDurationEnabled(e.target.checked)} />
                 </Box>
                 <Typography variant="body2" color="text.secondary" sx={{ mb: durationEnabled ? 2 : 0 }}>
-                    Set a daily screen time limit. When reached, the parent is notified.
+                    Set a time limit for each monitoring session. When it's reached, you're notified.
                 </Typography>
 
                 {/* Expanded screen time settings — shown when enabled */}
                 {durationEnabled && (
                     <Paper variant="outlined" sx={{ p: 2 }}>
-                        {/* Daily limit duration inputs */}
-                        <Typography variant="subtitle2" sx={{ mb: 1.5 }}>Daily limit</Typography>
+                        {/* Per-session limit duration inputs */}
+                        <Typography variant="subtitle2" sx={{ mb: 1.5 }}>Limit per session</Typography>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2.5 }}>
                             <TextField
                                 size="small" type="number" label="Hours" value={durationHours}

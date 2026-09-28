@@ -1,6 +1,6 @@
 -- ============================================================
 -- Users
--- testuser: id=1 (demo account, password: 'password')
+-- testuser: id=1 (demo account, password: 'password', PIN: '0000' — stored bcrypt hashed)
 -- admin:    id=2 (password: 'password')
 -- sarah:    id=3 (password: 'password')
 -- mike:     id=4 (password: 'password')
@@ -11,7 +11,7 @@ VALUES ('testuser',
         '$2b$12$7XY2y8CGoM2BUS4ePgwQSO4rwXAvc7BC4X0v0Fk.h52O7N3XuY0Ki',
         'John Doe',
         'john@johndoe.com',
-        '0000');
+        '$2b$12$j8TSKQ8PS4zemiNQ1gKFhO31fObFaJVwkk76PNutOxiZwdcSq6YIW');
 
 INSERT INTO users (username, password, name, email, is_admin)
 VALUES ('admin',

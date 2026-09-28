@@ -1,10 +1,13 @@
 const express = require('express');
 const router = express.Router();
 const Child = require('../models/Child');
-const { authenticateJWT } = require('../middleware/auth');
+const { ensureLoggedIn } = require('../middleware/auth');
+
+// Every child route requires a logged-in parent
+router.use(ensureLoggedIn);
 
 // Get all children for the logged-in user
-router.get('/', authenticateJWT, async (req, res) => {
+router.get('/', async (req, res) => {
     try {
         const children = await Child.getAll(res.locals.user.id);
         res.json(children);
@@ -14,7 +17,7 @@ router.get('/', authenticateJWT, async (req, res) => {
 });
 
 // Add a child
-router.post('/', authenticateJWT, async (req, res) => {
+router.post('/', async (req, res) => {
     const { name } = req.body;
     if (!name || !name.trim()) {
         return res.status(400).json({ message: 'Name is required.' });
@@ -28,7 +31,7 @@ router.post('/', authenticateJWT, async (req, res) => {
 });
 
 // Rename a child
-router.put('/:id/name', authenticateJWT, async (req, res) => {
+router.put('/:id/name', async (req, res) => {
     const { name } = req.body;
     if (!name || !name.trim()) return res.status(400).json({ message: 'Name is required.' });
     try {
@@ -40,7 +43,7 @@ router.put('/:id/name', authenticateJWT, async (req, res) => {
 });
 
 // Update child settings
-router.put('/:id/settings', authenticateJWT, async (req, res) => {
+router.put('/:id/settings', async (req, res) => {
     const { settings } = req.body;
     try {
         const child = await Child.updateSettings(req.params.id, res.locals.user.id, settings);
@@ -51,7 +54,7 @@ router.put('/:id/settings', authenticateJWT, async (req, res) => {
 });
 
 // Remove a child
-router.delete('/:id', authenticateJWT, async (req, res) => {
+router.delete('/:id', async (req, res) => {
     try {
         await Child.remove(req.params.id, res.locals.user.id);
         res.json({ message: 'Child removed.' });

@@ -2,15 +2,27 @@ const express = require('express');
 const router = express.Router();
 const Session = require('../models/Session');
 const User = require('../models/User');
-const { authenticateJWT } = require('../middleware/auth');
+const { authenticateBodyToken, ensureLoggedIn, ensureCorrectUser } = require('../middleware/auth');
+const { NotFoundError } = require('../expressError');
 const { sendNotification } = require('../notify');
 
-// Start a session
-router.post('/start', authenticateJWT, async (req, res) => {
-    const { username, childId } = req.body;
+// Only continue if the logged-in user owns :sessionId
+async function ensureSessionOwner(req, res, next) {
     try {
-        const user = await User.getUserByUsername(username);
-        const session = await Session.start(user.id, childId || null);
+        const { sessionId } = req.params;
+        if (!/^\d+$/.test(sessionId)) throw new NotFoundError(`No session: ${sessionId}`);
+        await Session.ensureOwner(sessionId, res.locals.user.id);
+        return next();
+    } catch (err) {
+        return next(err);
+    }
+}
+
+// Start a session
+router.post('/start', ensureLoggedIn, async (req, res) => {
+    const { childId } = req.body;
+    try {
+        const session = await Session.start(res.locals.user.id, childId || null);
         res.json(session);
     } catch (error) {
         console.error('Error starting session:', error);
@@ -19,7 +31,7 @@ router.post('/start', authenticateJWT, async (req, res) => {
 });
 
 // End a session
-router.put('/:sessionId/end', authenticateJWT, async (req, res) => {
+router.put('/:sessionId/end', ensureLoggedIn, ensureSessionOwner, async (req, res) => {
     const { sessionId } = req.params;
     try {
         const session = await Session.end(sessionId);
@@ -31,11 +43,11 @@ router.put('/:sessionId/end', authenticateJWT, async (req, res) => {
 });
 
 // Add a detection to a session
-router.post('/:sessionId/detections', authenticateJWT, async (req, res) => {
+router.post('/:sessionId/detections', ensureLoggedIn, ensureSessionOwner, async (req, res) => {
     const { sessionId } = req.params;
-    const { username, word, context, childName, notify } = req.body;
+    const { word, context, childName, notify } = req.body;
     try {
-        const user = await User.getUserByUsername(username);
+        const user = await User.getUserByUsername(res.locals.user.username);
         const detection = await Session.addDetection(sessionId, user.id, word, context);
         if (notify && notify !== 'none') {
             sendNotification({ notify, email: user.email, phone: user.phone, childName: childName || 'your child', word, context }).catch(console.error);
@@ -48,10 +60,10 @@ router.post('/:sessionId/detections', authenticateJWT, async (req, res) => {
 });
 
 // Send time-up notification
-router.post('/notify-time-up', authenticateJWT, async (req, res) => {
-    const { username, childName, notify } = req.body;
+router.post('/notify-time-up', ensureLoggedIn, async (req, res) => {
+    const { childName, notify } = req.body;
     try {
-        const user = await User.getUserByUsername(username);
+        const user = await User.getUserByUsername(res.locals.user.username);
         await sendNotification({
             notify,
             email: user.email,
@@ -66,12 +78,13 @@ router.post('/notify-time-up', authenticateJWT, async (req, res) => {
     }
 });
 
-// End a session when the tab is closed — no JWT (sendBeacon can't send auth headers)
-router.post('/:sessionId/abandoned', async (req, res) => {
+// End a session when the tab is closed
+// sendBeacon can't send auth headers, so the JWT comes in the request body instead
+router.post('/:sessionId/abandoned', authenticateBodyToken, ensureLoggedIn, ensureSessionOwner, async (req, res) => {
     const { sessionId } = req.params;
-    const { username, childName, notify } = req.body;
+    const { childName, notify } = req.body;
     try {
-        const user = await User.getUserByUsername(username);
+        const user = await User.getUserByUsername(res.locals.user.username);
         await Session.end(sessionId);
         if (notify && notify !== 'none') {
             sendNotification({ notify, email: user.email, phone: user.phone, childName: childName || 'your child', type: 'abandoned' }).catch(console.error);
@@ -84,12 +97,10 @@ router.post('/:sessionId/abandoned', async (req, res) => {
 });
 
 // Get all sessions for a user, optionally filtered by child
-router.get('/user/:username', authenticateJWT, async (req, res) => {
-    const { username } = req.params;
+router.get('/user/:username', ensureCorrectUser, async (req, res) => {
     const childId = req.query.childId || null;
     try {
-        const user = await User.getUserByUsername(username);
-        const sessions = await Session.getAllForUser(user.id, childId);
+        const sessions = await Session.getAllForUser(res.locals.user.id, childId);
         res.json(sessions);
     } catch (error) {
         console.error('Error fetching sessions:', error);
@@ -98,7 +109,7 @@ router.get('/user/:username', authenticateJWT, async (req, res) => {
 });
 
 // Get detections for a session
-router.get('/:sessionId/detections', authenticateJWT, async (req, res) => {
+router.get('/:sessionId/detections', ensureLoggedIn, ensureSessionOwner, async (req, res) => {
     const { sessionId } = req.params;
     try {
         const detections = await Session.getDetections(sessionId);
@@ -110,7 +121,7 @@ router.get('/:sessionId/detections', authenticateJWT, async (req, res) => {
 });
 
 // Add transcript chunk
-router.post('/:sessionId/transcripts', authenticateJWT, async (req, res) => {
+router.post('/:sessionId/transcripts', ensureLoggedIn, ensureSessionOwner, async (req, res) => {
     const { sessionId } = req.params;
     const { text } = req.body;
     try {
@@ -123,7 +134,7 @@ router.post('/:sessionId/transcripts', authenticateJWT, async (req, res) => {
 });
 
 // Get transcripts for a session
-router.get('/:sessionId/transcripts', authenticateJWT, async (req, res) => {
+router.get('/:sessionId/transcripts', ensureLoggedIn, ensureSessionOwner, async (req, res) => {
     const { sessionId } = req.params;
     try {
         const transcripts = await Session.getTranscripts(sessionId);

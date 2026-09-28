@@ -38,20 +38,20 @@ class VigilKuraApi {
         return VigilKuraApi.request(`user/${username}/verify-pin`, { pin }, 'post');
     }
 
-    static async startSession(username, childId = null) {
-        return VigilKuraApi.request('sessions/start', { username, childId }, 'post');
+    static async startSession(childId = null) {
+        return VigilKuraApi.request('sessions/start', { childId }, 'post');
     }
 
     static async endSession(sessionId) {
         return VigilKuraApi.request(`sessions/${sessionId}/end`, {}, 'put');
     }
 
-    static async addDetection(sessionId, username, word, context, childName, notify = null) {
-        return VigilKuraApi.request(`sessions/${sessionId}/detections`, { username, word, context, childName, notify }, 'post');
+    static async addDetection(sessionId, word, context, childName, notify = null) {
+        return VigilKuraApi.request(`sessions/${sessionId}/detections`, { word, context, childName, notify }, 'post');
     }
 
-    static async notifyTimeUp(username, childName, notify) {
-        return VigilKuraApi.request('sessions/notify-time-up', { username, childName, notify }, 'post');
+    static async notifyTimeUp(childName, notify) {
+        return VigilKuraApi.request('sessions/notify-time-up', { childName, notify }, 'post');
     }
 
     static async addTranscript(sessionId, text) {
