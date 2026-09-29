@@ -258,6 +258,7 @@ const Monitor = () => {
     const wordAlertPopupRef = useRef(false);
     const wordChimeRef = useRef(false);
     const wordNotifyChannelRef = useRef(null);
+    const interruptedNotifyChannelRef = useRef(null);
     const lastNotifTimeRef = useRef(null);
     const notifCooldownRef = useRef(5);
 
@@ -338,7 +339,7 @@ const Monitor = () => {
             const params = new URLSearchParams({
                 token: localStorage.getItem('token') || '',
                 childName: activeChildRef.current?.name || '',
-                notify: wordNotifyChannelRef.current || '',
+                notify: interruptedNotifyChannelRef.current || '',
             });
             navigator.sendBeacon(`${BASE_URL}/sessions/${sessionIdRef.current}/abandoned`, params);
         };
@@ -494,6 +495,8 @@ const Monitor = () => {
         wordAlertPopupRef.current = childSettings.wordAlertPopup !== false;
         wordChimeRef.current = childSettings.wordChime || false;
         wordNotifyChannelRef.current = getNotifyChannel(childSettings.wordEmail);
+        // On unless turned off — older settings without the key still get the tab-closed email
+        interruptedNotifyChannelRef.current = getNotifyChannel(childSettings.interruptedEmail !== false);
         notifCooldownRef.current = childSettings.notifCooldown ?? 5;
         lastNotifTimeRef.current = null;
 

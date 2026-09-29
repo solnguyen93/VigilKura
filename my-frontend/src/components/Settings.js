@@ -37,6 +37,8 @@ const loadSettings = (settings = {}) => ({
     timeUpAlert: settings.timeUpAlert !== false,
     timeUpChime: settings.timeUpChime || false,
     timeUpEmail: settings.timeUpEmail || false,
+    // Tab-closed alert — on by default, since it's how a parent learns monitoring was cut short
+    interruptedEmail: settings.interruptedEmail !== false,
 });
 
 const Settings = () => {
@@ -72,6 +74,9 @@ const Settings = () => {
     const [timeUpAlert, setTimeUpAlert] = useState(true);
     const [timeUpChime, setTimeUpChime] = useState(false);
     const [timeUpEmail, setTimeUpEmail] = useState(false);
+
+    // Monitoring interrupted notification setting
+    const [interruptedEmail, setInterruptedEmail] = useState(true);
 
     // Save state and refs
     const [saveMsg, setSaveMsg] = useState('');
@@ -114,6 +119,7 @@ const Settings = () => {
         setTimeUpAlert(s.timeUpAlert !== false);
         setTimeUpChime(s.timeUpChime || false);
         setTimeUpEmail(s.timeUpEmail || false);
+        setInterruptedEmail(s.interruptedEmail);
     };
 
     // Fetch children on mount
@@ -147,10 +153,11 @@ const Settings = () => {
             durationEnabled, durationHours, durationMinutes,
             warningEnabled, warningMinutes,
             timeUpAlert, timeUpChime, timeUpEmail,
+            interruptedEmail,
         };
         scheduleAutoSave(settings, selectedChild);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [wordList, wordDetectionEnabled, wordAlertPopup, wordChime, wordEmail, notifCooldown, durationEnabled, durationHours, durationMinutes, warningEnabled, warningMinutes, timeUpAlert, timeUpChime, timeUpEmail]);
+    }, [wordList, wordDetectionEnabled, wordAlertPopup, wordChime, wordEmail, notifCooldown, durationEnabled, durationHours, durationMinutes, warningEnabled, warningMinutes, timeUpAlert, timeUpChime, timeUpEmail, interruptedEmail]);
 
     // Add a custom word to the word list
     const handleAddWord = () => {
@@ -397,6 +404,20 @@ const Settings = () => {
                         <FormControlLabel control={<Switch checked={timeUpEmail} onChange={(e) => setTimeUpEmail(e.target.checked)} size="small" />} label="Send email notification" sx={{ display: 'block', mb: 0.5 }} />
                     </Paper>
                 )}
+            </Box>
+
+            <Divider sx={{ mb: 3 }} />
+
+            {/* Monitoring interrupted (tab closed) */}
+            <Box sx={{ mb: 3 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+                    <Typography variant="h6">Monitoring Interrupted</Typography>
+                    <Switch checked={interruptedEmail} onChange={(e) => setInterruptedEmail(e.target.checked)} />
+                </Box>
+                <Typography variant="body2" color="text.secondary">
+                    Email me if the VigilKura tab is closed during monitoring and isn't reopened within 45 seconds.
+                    Reloading the page doesn't count.
+                </Typography>
             </Box>
 
         </Box>

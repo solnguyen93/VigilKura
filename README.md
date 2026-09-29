@@ -11,7 +11,7 @@ A web app that listens through the browser microphone during a child's screen ti
 - Custom word list per child with default profanity list
 - Email alerts on detection or when the session time limit is reached
 - Configurable minimum time between alerts to prevent notification spam
-- Parent notified if the browser tab is closed during an active session
+- Parent emailed if the browser tab is closed during monitoring and not reopened within 45 seconds (on by default, per child)
 - Per-session screen time limit with a warning before time is up
 - Session history with full transcripts, filterable by child and time period
 - Multi-child support with per-child settings
