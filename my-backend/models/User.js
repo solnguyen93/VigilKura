@@ -58,7 +58,7 @@ class User {
 
     static async getUserByUsername(username) {
         const result = await pool.query(
-            `SELECT id, name, username, email, phone,
+            `SELECT id, name, username, email,
                     is_admin AS "isAdmin", settings,
                     pin IS NOT NULL AS "hasPin"
              FROM users
@@ -77,25 +77,22 @@ class User {
             data.pin = await bcrypt.hash(String(data.pin), BCRYPT_WORK_FACTOR);
         }
 
-        const { name, email, phone, password: hashedPass, pin: hashedPin, settings, removePin } = data;
-        const clearPhone = Object.prototype.hasOwnProperty.call(data, 'phone') && !phone;
+        const { name, email, password: hashedPass, pin: hashedPin, settings, removePin } = data;
 
         try {
             const result = await pool.query(
                 `UPDATE users
                  SET name     = COALESCE($1, name),
                      email    = COALESCE($2, email),
-                     phone    = CASE WHEN $9 THEN NULL WHEN $3::VARCHAR IS NOT NULL THEN $3::VARCHAR ELSE phone END,
-                     password = COALESCE($4, password),
-                     pin      = CASE WHEN $8 THEN NULL WHEN $5::VARCHAR IS NOT NULL THEN $5::VARCHAR ELSE pin END,
-                     settings = COALESCE($6::jsonb, settings)
-                 WHERE username = $7
-                 RETURNING id, name, username, email, phone,
+                     password = COALESCE($3, password),
+                     pin      = CASE WHEN $7 THEN NULL WHEN $4::VARCHAR IS NOT NULL THEN $4::VARCHAR ELSE pin END,
+                     settings = COALESCE($5::jsonb, settings)
+                 WHERE username = $6
+                 RETURNING id, name, username, email,
                            is_admin AS "isAdmin", settings,
                            pin IS NOT NULL AS "hasPin"`,
-                [name || null, email || null, phone || null, hashedPass || null,
-                 hashedPin || null, settings ? JSON.stringify(settings) : null,
-                 username, removePin || false, clearPhone],
+                [name || null, email || null, hashedPass || null, hashedPin || null,
+                 settings ? JSON.stringify(settings) : null, username, removePin || false],
             );
             if (!result.rows[0]) throw new NotFoundError(`No user: ${username}`);
             return result.rows[0];

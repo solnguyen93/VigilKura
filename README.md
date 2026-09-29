@@ -2,14 +2,14 @@
 
 **Live demo:** https://vigilkura.onrender.com
 
-A web app that listens through the browser microphone during a child's screen time, shows a live transcript, and texts or emails parents when it hears words they've flagged. Parents set a word list and a session time limit for each child. Kid Mode takes over the tab so monitoring can't be stopped without a PIN, and you're alerted if the tab is closed. Past sessions are saved as transcripts, optionally translated into the parent's language with OpenAI.
+A web app that listens through the browser microphone during a child's screen time, shows a live transcript, and emails parents when it hears words they've flagged. Parents set a word list and a session time limit for each child. Kid Mode takes over the tab so monitoring can't be stopped without a PIN, and you're alerted if the tab is closed. Past sessions are saved as transcripts, optionally translated into the parent's language with OpenAI.
 
 ## Features
 
 - Real-time word detection via browser speech recognition (Chrome, English)
 - Live transcript while monitoring, with flagged words blurred
 - Custom word list per child with default profanity list
-- Email and SMS alerts on detection or when the session time limit is reached
+- Email alerts on detection or when the session time limit is reached
 - Configurable minimum time between alerts to prevent notification spam
 - Parent notified if the browser tab is closed during an active session
 - Per-session screen time limit with a warning before time is up
@@ -24,7 +24,7 @@ A web app that listens through the browser microphone during a child's screen ti
 
 **Frontend:** React, Material UI, Web Speech API  
 **Backend:** Node.js, Express, PostgreSQL  
-**Services:** OpenAI (translation), Gmail API (email), Twilio (SMS)
+**Services:** OpenAI (translation), Gmail API (email)
 
 ## Getting Started
 
@@ -83,11 +83,6 @@ EMAIL_FROM=your_gmail@gmail.com             # must be the account the refresh to
 # Local fallback without the Gmail API: Gmail SMTP with an App Password
 GMAIL_USER=your_gmail@gmail.com
 GMAIL_APP_PASSWORD=your_gmail_app_password
-
-# Twilio (for SMS notifications — optional)
-TWILIO_ACCOUNT_SID=your_twilio_sid
-TWILIO_AUTH_TOKEN=your_twilio_token
-TWILIO_MESSAGING_SERVICE_SID=your_messaging_service_sid
 ```
 
 The frontend reads the backend URL from `my-frontend/.env` (defaults to `http://localhost:5000` if unset). Copy the example to get started:
@@ -132,7 +127,7 @@ A test account is available on the sign-in page:
 - **Password:** password  
 - **PIN:** 0000
 
-The demo account is shared, so its profile, password, and PIN are locked and it never sends email or SMS. The microphone works as usual on the demo account, and it also gets a text box while monitoring to simulate speech by typing — handy for trying word detection without a mic.
+The demo account is shared, so its profile, password, and PIN are locked and it never sends email alerts. The microphone works as usual on the demo account, and it also gets a text box while monitoring to simulate speech by typing — handy for trying word detection without a mic.
 
 ## Tips for best results
 
@@ -152,7 +147,6 @@ The demo account is shared, so its profile, password, and PIN are locked and it 
 | username | text | unique |
 | email | text | unique |
 | password | text | bcrypt hashed |
-| phone | varchar | optional, for SMS |
 | pin | varchar | optional 4-digit monitor PIN, bcrypt hashed |
 | is_admin | boolean | default false |
 | settings | jsonb | translation language preference |
@@ -202,5 +196,4 @@ The demo account is shared, so its profile, password, and PIN are locked and it 
 
 - Speech recognition only works in Chrome (Web Speech API)
 - VigilKura never records or stores audio. Chrome's speech recognition sends audio to Google's speech service for transcription; only the resulting text reaches the VigilKura backend
-- SMS requires an approved Twilio toll-free number with active verification
 - Monitoring someone without their knowledge may violate laws in your area — this tool is intended for parents monitoring their own minor children on devices they own

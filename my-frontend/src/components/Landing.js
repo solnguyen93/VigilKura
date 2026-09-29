@@ -36,7 +36,7 @@ const Landing = () => {
             <Typography variant="body2" color="text.secondary">
                 Start monitoring in a Chrome tab on the computer your kid is using. VigilKura listens through
                 the microphone, shows a live transcript, and checks what's said against a word list you set
-                for each child. If a flagged word comes up, you get a text or email. You can set a time limit
+                for each child. If a flagged word comes up, you get an email. You can set a time limit
                 for each session, and you're alerted if the tab is closed early. Every session is saved as a
                 transcript in History so you can look back at what was said.
             </Typography>
@@ -63,7 +63,7 @@ const Landing = () => {
             </Typography>
             <Box component="ul" sx={{ pl: 2.5, mt: 0, mb: 0 }}>
                 {[
-                    'Your name, email, and phone number (if provided)',
+                    'Your name and email',
                     'Your word list and notification settings',
                     'Session timestamps and duration',
                     'Flagged words and the sentence they appeared in',
@@ -80,7 +80,7 @@ const Landing = () => {
                     Chrome's built-in speech recognition, which sends the audio to Google's speech service
                     to turn it into text. Only that text reaches VigilKura and is stored. At the end of a
                     session, the transcript is sent to OpenAI to translate it into your chosen language.
-                    Notifications are sent through Gmail (email) and Twilio (SMS). See Privacy & Terms for details.
+                    Email alerts are sent through Gmail. See Privacy & Terms for details.
                 </Typography>
             </Paper>
         </Section>

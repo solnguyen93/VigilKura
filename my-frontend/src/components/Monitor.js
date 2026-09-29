@@ -130,13 +130,8 @@ const highlightWord = (text, word) => {
     );
 };
 
-// Resolve notification channel from two boolean settings (email + sms)
-const getNotifyChannel = (email, sms) => {
-    if (email && sms) return 'both';
-    if (email) return 'email';
-    if (sms) return 'phone';
-    return null;
-};
+// Notification channel sent to the backend — email is the only one
+const getNotifyChannel = (email) => (email ? 'email' : null);
 
 // Transcript section for Last Session
 // Auto-scrolls to the first incident when detections are available
@@ -432,7 +427,7 @@ const Monitor = () => {
                     if (Notification.permission === 'granted') {
                         new Notification('VigilKura', { body: "Time's up!" });
                     }
-                    const channel = getNotifyChannel(settings.timeUpEmail, settings.timeUpSms);
+                    const channel = getNotifyChannel(settings.timeUpEmail);
                     if (channel) {
                         VigilKuraApi.notifyTimeUp(activeChildRef.current?.name, channel).catch(console.error);
                     }
@@ -498,7 +493,7 @@ const Monitor = () => {
         wordListRef.current = wordList;
         wordAlertPopupRef.current = childSettings.wordAlertPopup !== false;
         wordChimeRef.current = childSettings.wordChime || false;
-        wordNotifyChannelRef.current = getNotifyChannel(childSettings.wordEmail, childSettings.wordSms);
+        wordNotifyChannelRef.current = getNotifyChannel(childSettings.wordEmail);
         notifCooldownRef.current = childSettings.notifCooldown ?? 5;
         lastNotifTimeRef.current = null;
 

@@ -1,27 +1,12 @@
 import React, { useState } from 'react';
 import { useAuth } from '../AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { TextField, Button, Box, Alert, Typography, Select, MenuItem, InputAdornment, FormControlLabel, Checkbox, Link } from '@mui/material';
+import { TextField, Button, Box, Alert, Typography, FormControlLabel, Checkbox, Link } from '@mui/material';
 import VigilKuraApi from '../api.js';
 import PasswordField from './PasswordField';
 
-const COUNTRY_CODES = [
-    { code: '+1', label: '🇺🇸 +1' },
-    { code: '+44', label: '🇬🇧 +44' },
-    { code: '+61', label: '🇦🇺 +61' },
-    { code: '+52', label: '🇲🇽 +52' },
-    { code: '+63', label: '🇵🇭 +63' },
-    { code: '+84', label: '🇻🇳 +84' },
-    { code: '+82', label: '🇰🇷 +82' },
-    { code: '+81', label: '🇯🇵 +81' },
-    { code: '+86', label: '🇨🇳 +86' },
-    { code: '+91', label: '🇮🇳 +91' },
-];
-
 const RegisterForm = () => {
-    const [form, setForm] = useState({ name: '', username: '', email: '', password: '', confirmPassword: '', phone: '', child: '', pin: '' });
-    const [countryCode, setCountryCode] = useState('+1');
-    const [smsConsent, setSmsConsent] = useState(false);
+    const [form, setForm] = useState({ name: '', username: '', email: '', password: '', confirmPassword: '', child: '', pin: '' });
     const [termsAgreed, setTermsAgreed] = useState(false);
     const [ageConfirmed, setAgeConfirmed] = useState(false);
     const [errors, setErrors] = useState({});
@@ -47,7 +32,6 @@ const RegisterForm = () => {
         else if (form.password !== form.confirmPassword) errs.confirmPassword = 'Passwords do not match.';
         if (!form.child.trim()) errs.child = 'Child name is required.';
         if (form.pin && !/^\d{4}$/.test(form.pin)) errs.pin = 'PIN must be exactly 4 digits.';
-        if (form.phone.trim() && !smsConsent) errs.smsConsent = 'Please agree to receive SMS alerts.';
         if (!ageConfirmed) errs.ageConfirmed = 'You must be 18 or older to create an account.';
         if (!termsAgreed) errs.termsAgreed = 'You must read and agree to the terms before creating an account.';
         return errs;
@@ -62,12 +46,9 @@ const RegisterForm = () => {
         }
         try {
             await register(form.name, form.username, form.email, form.password);
-            const updates = {};
-            if (form.pin) updates.pin = form.pin;
-            if (form.phone.trim()) updates.phone = `${countryCode}${form.phone.trim()}`;
-            if (Object.keys(updates).length) {
-                await VigilKuraApi.updateUser(form.username, updates);
-                if (form.pin) setUser((prev) => ({ ...prev, hasPin: true }));
+            if (form.pin) {
+                await VigilKuraApi.updateUser(form.username, { pin: form.pin });
+                setUser((prev) => ({ ...prev, hasPin: true }));
             }
             await VigilKuraApi.addChild(form.child.trim());
             navigate('/monitor');
@@ -135,43 +116,6 @@ const RegisterForm = () => {
                 error={!!errors.confirmPassword}
                 helperText={errors.confirmPassword}
             />
-            <TextField
-                fullWidth
-                margin="normal"
-                label="Phone Number"
-                name="phone"
-                value={form.phone}
-                onChange={(e) => setForm((p) => ({ ...p, phone: e.target.value.replace(/\D/g, '') }))}
-                placeholder="10-digit phone number"
-                InputProps={{
-                    startAdornment: (
-                        <InputAdornment position="start">
-                            <Select
-                                value={countryCode}
-                                onChange={(e) => setCountryCode(e.target.value)}
-                                variant="standard"
-                                disableUnderline
-                                sx={{ mr: 0.5, fontSize: '0.9rem' }}
-                            >
-                                {COUNTRY_CODES.map((c) => (
-                                    <MenuItem key={c.code} value={c.code}>{c.label}</MenuItem>
-                                ))}
-                            </Select>
-                        </InputAdornment>
-                    ),
-                }}
-            />
-            {form.phone.trim() && (
-                <FormControlLabel
-                    sx={{ mt: 0.5, mb: 0.5 }}
-                    control={<Checkbox size="small" checked={smsConsent} onChange={(e) => setSmsConsent(e.target.checked)} />}
-                    label={
-                        <Typography variant="caption" color={errors.smsConsent ? 'error' : 'text.secondary'}>
-                            I agree to receive SMS alerts from VigilKura. Message & data rates may apply.
-                        </Typography>
-                    }
-                />
-            )}
             <TextField
                 fullWidth
                 margin="normal"

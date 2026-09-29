@@ -14,7 +14,6 @@ CREATE TABLE users (
     password VARCHAR(100) NOT NULL,
     is_admin BOOLEAN NOT NULL DEFAULT FALSE,
     pin VARCHAR(100),
-    phone VARCHAR(20),
     settings JSONB NOT NULL DEFAULT '{}',
     reset_token VARCHAR(100),
     reset_token_expires TIMESTAMP

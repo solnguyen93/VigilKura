@@ -7,7 +7,7 @@ import { useAuth } from '../AuthContext';
 import {
     Box, Typography, Button, Divider, Chip, Alert,
     TextField, IconButton, Collapse,
-    Select, MenuItem, InputAdornment, FormControlLabel, Checkbox, FormControl,
+    Select, MenuItem, FormControl,
 } from '@mui/material';
 
 import CheckIcon from '@mui/icons-material/Check';
@@ -19,19 +19,6 @@ import AddIcon from '@mui/icons-material/Add';
 const LANGUAGES = [
     'English', 'Spanish', 'Vietnamese', 'Chinese (Simplified)',
     'Tagalog', 'Korean', 'Japanese', 'French', 'Portuguese', 'Hindi', 'Arabic',
-];
-
-const COUNTRY_CODES = [
-    { code: '+1', label: '🇺🇸 +1' },
-    { code: '+44', label: '🇬🇧 +44' },
-    { code: '+61', label: '🇦🇺 +61' },
-    { code: '+52', label: '🇲🇽 +52' },
-    { code: '+63', label: '🇵🇭 +63' },
-    { code: '+84', label: '🇻🇳 +84' },
-    { code: '+82', label: '🇰🇷 +82' },
-    { code: '+81', label: '🇯🇵 +81' },
-    { code: '+86', label: '🇨🇳 +86' },
-    { code: '+91', label: '🇮🇳 +91' },
 ];
 
 
@@ -118,12 +105,6 @@ const Profile = () => {
 
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
-    const [phone, setPhone] = useState('');
-    const [phoneCountryCode, setPhoneCountryCode] = useState('+1');
-    const [phoneEditing, setPhoneEditing] = useState(false);
-    const [phoneDraft, setPhoneDraft] = useState('');
-    const [phoneCountryDraft, setPhoneCountryDraft] = useState('+1');
-    const [smsConsent, setSmsConsent] = useState(false);
     const [profileMsg, setProfileMsg] = useState(null);
 
     const [showPasswordForm, setShowPasswordForm] = useState(false);
@@ -147,7 +128,6 @@ const Profile = () => {
     const [editChildName, setEditChildName] = useState('');
 
     // Fetch user profile and children in parallel on mount
-    // Phone is stored as a combined string — split into country code + digits for display
     const { loading } = useDataFetching(async () => {
         const [data, kids] = await Promise.all([
             VigilKuraApi.getUserByUsername(username),
@@ -155,14 +135,6 @@ const Profile = () => {
         ]);
         setName(data.name);
         setEmail(data.email);
-        const rawPhone = data.phone || '';
-        const matchedCode = COUNTRY_CODES.map((c) => c.code).find((c) => rawPhone.startsWith(c));
-        if (matchedCode) {
-            setPhoneCountryCode(matchedCode);
-            setPhone(rawPhone.slice(matchedCode.length));
-        } else {
-            setPhone(rawPhone);
-        }
         setHasPin(data.hasPin);
         setPreferredLanguage(data.settings?.preferredLanguage || 'English');
         setChildren(kids);
@@ -242,27 +214,6 @@ const Profile = () => {
             setProfileMsg({ text: 'Email updated.', error: false });
         } catch (err) {
             setProfileMsg({ text: err.response?.data?.message || 'Failed to update email.', error: true });
-        }
-    };
-
-    // Save phone number — requires SMS consent checkbox if a number is provided
-    // Combines country code + digits and passes null to clear if left blank
-    const handleSavePhone = async () => {
-        const digits = phoneDraft.replace(/\D/g, '');
-        if (digits && !smsConsent) {
-            setProfileMsg({ text: 'Please agree to receive SMS alerts before saving a phone number.', error: true });
-            return;
-        }
-        const full = digits ? `${phoneCountryDraft}${digits}` : '';
-        try {
-            await VigilKuraApi.updateUser(username, { phone: full || null });
-            setPhoneCountryCode(phoneCountryDraft);
-            setPhone(digits);
-            setPhoneEditing(false);
-            setSmsConsent(false);
-            setProfileMsg({ text: 'Phone updated.', error: false });
-        } catch (err) {
-            setProfileMsg({ text: err.response?.data?.message || 'Failed to update phone.', error: true });
         }
     };
 
@@ -358,69 +309,6 @@ const Profile = () => {
             {/* Inline editable fields */}
             <InlineField label="Name" value={name} onSave={handleSaveName} validate={validateName} />
             <InlineField label="Email" value={email} onSave={handleSaveEmail} validate={validateEmail} />
-            {/* Phone Number — custom inline editor with country code */}
-            <Box sx={{ mb: 2, minHeight: 36 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Typography variant="caption" color="text.secondary" sx={{ minWidth: 100 }}>Phone Number</Typography>
-                    {phoneEditing ? (
-                        <>
-                            <TextField
-                                size="small"
-                                value={phoneDraft}
-                                onChange={(e) => setPhoneDraft(e.target.value.replace(/\D/g, ''))}
-                                onKeyDown={(e) => { if (e.key === 'Enter') handleSavePhone(); if (e.key === 'Escape') setPhoneEditing(false); }}
-                                placeholder="10-digit phone number"
-                                autoFocus
-                                sx={{ flex: 1 }}
-                                InputProps={{
-                                    startAdornment: (
-                                        <InputAdornment position="start">
-                                            <Select
-                                                value={phoneCountryDraft}
-                                                onChange={(e) => setPhoneCountryDraft(e.target.value)}
-                                                variant="standard"
-                                                disableUnderline
-                                                sx={{ fontSize: '0.85rem', mr: 0.5 }}
-                                            >
-                                                {COUNTRY_CODES.map((c) => (
-                                                    <MenuItem key={c.code} value={c.code}>{c.label}</MenuItem>
-                                                ))}
-                                            </Select>
-                                        </InputAdornment>
-                                    ),
-                                }}
-                            />
-                            <IconButton size="small" color="primary" onClick={handleSavePhone}><CheckIcon fontSize="small" /></IconButton>
-                            <IconButton size="small" onClick={() => setPhoneEditing(false)}><CloseIcon fontSize="small" /></IconButton>
-                        </>
-                    ) : (
-                        <Box
-                            onClick={() => { setPhoneDraft(phone); setPhoneCountryDraft(phoneCountryCode); setPhoneEditing(true); }}
-                            sx={{
-                                cursor: 'text', px: 1, py: 0.5, borderRadius: 1,
-                                borderBottom: '2px dashed', borderColor: 'transparent',
-                                transition: 'border-color 0.15s ease', flex: 1,
-                                '&:hover': { borderColor: 'primary.main' },
-                            }}
-                        >
-                            <Typography variant="body1">
-                                {phone ? `${phoneCountryCode}${phone}` : '—'}
-                            </Typography>
-                        </Box>
-                    )}
-                </Box>
-                {phoneEditing && (
-                    <FormControlLabel
-                        sx={{ mt: 1, ml: 0 }}
-                        control={<Checkbox size="small" checked={smsConsent} onChange={(e) => setSmsConsent(e.target.checked)} />}
-                        label={
-                            <Typography variant="caption" color="text.secondary">
-                                I agree to receive SMS alerts from VigilKura. Message & data rates may apply.
-                            </Typography>
-                        }
-                    />
-                )}
-            </Box>
 
             {/* Translate Language — AI transcripts will be translated into this language */}
             <Box sx={{ mb: 2 }}>

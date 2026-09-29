@@ -26,7 +26,6 @@ const loadSettings = (settings = {}) => ({
     wordAlertPopup: settings.wordAlertPopup !== false,
     wordChime: settings.wordChime || false,
     wordEmail: settings.wordEmail || false,
-    wordSms: settings.wordSms || false,
     notifCooldown: settings.notifCooldown ?? 5,
     // Screen time settings
     durationEnabled: settings.durationEnabled || false,
@@ -38,7 +37,6 @@ const loadSettings = (settings = {}) => ({
     timeUpAlert: settings.timeUpAlert !== false,
     timeUpChime: settings.timeUpChime || false,
     timeUpEmail: settings.timeUpEmail || false,
-    timeUpSms: settings.timeUpSms || false,
 });
 
 const Settings = () => {
@@ -61,7 +59,6 @@ const Settings = () => {
     const [wordAlertPopup, setWordAlertPopup] = useState(true);
     const [wordChime, setWordChime] = useState(false);
     const [wordEmail, setWordEmail] = useState(false);
-    const [wordSms, setWordSms] = useState(false);
     const [notifCooldown, setNotifCooldown] = useState(5);
 
     // Screen time settings
@@ -75,15 +72,11 @@ const Settings = () => {
     const [timeUpAlert, setTimeUpAlert] = useState(true);
     const [timeUpChime, setTimeUpChime] = useState(false);
     const [timeUpEmail, setTimeUpEmail] = useState(false);
-    const [timeUpSms, setTimeUpSms] = useState(false);
 
     // Save state and refs
     const [saveMsg, setSaveMsg] = useState('');
     const autoSaveTimer = useRef(null);
     const isLoadingRef = useRef(false); // Prevents auto-save from firing during initial settings load
-
-    // User's phone number — fetched on load to gate SMS notification options
-    const [userPhone, setUserPhone] = useState('');
 
     // Persist settings to the backend for the selected child
     const doSave = useCallback(async (settings, child) => {
@@ -112,7 +105,6 @@ const Settings = () => {
         setWordAlertPopup(s.wordAlertPopup);
         setWordChime(s.wordChime);
         setWordEmail(s.wordEmail);
-        setWordSms(s.wordSms);
         setNotifCooldown(s.notifCooldown);
         setDurationEnabled(s.durationEnabled);
         setDurationHours(s.durationHours);
@@ -122,17 +114,12 @@ const Settings = () => {
         setTimeUpAlert(s.timeUpAlert !== false);
         setTimeUpChime(s.timeUpChime || false);
         setTimeUpEmail(s.timeUpEmail || false);
-        setTimeUpSms(s.timeUpSms || false);
     };
 
-    // Fetch children and user's phone number on mount
+    // Fetch children on mount
     useEffect(() => {
         if (!user) { navigate('/vigilkura'); return; }
-        Promise.all([
-            VigilKuraApi.getChildren(),
-            VigilKuraApi.getUserByUsername(user.username),
-        ]).then(([kids, userData]) => {
-            setUserPhone(userData.phone || '');
+        VigilKuraApi.getChildren().then((kids) => {
             setChildren(kids);
             // Default to first child if available
             if (kids.length > 0) {
@@ -156,14 +143,14 @@ const Settings = () => {
     useEffect(() => {
         const settings = {
             wordList,
-            wordDetectionEnabled, wordAlertPopup, wordChime, wordEmail, wordSms, notifCooldown,
+            wordDetectionEnabled, wordAlertPopup, wordChime, wordEmail, notifCooldown,
             durationEnabled, durationHours, durationMinutes,
             warningEnabled, warningMinutes,
-            timeUpAlert, timeUpChime, timeUpEmail, timeUpSms,
+            timeUpAlert, timeUpChime, timeUpEmail,
         };
         scheduleAutoSave(settings, selectedChild);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [wordList, wordDetectionEnabled, wordAlertPopup, wordChime, wordEmail, wordSms, notifCooldown, durationEnabled, durationHours, durationMinutes, warningEnabled, warningMinutes, timeUpAlert, timeUpChime, timeUpEmail, timeUpSms]);
+    }, [wordList, wordDetectionEnabled, wordAlertPopup, wordChime, wordEmail, notifCooldown, durationEnabled, durationHours, durationMinutes, warningEnabled, warningMinutes, timeUpAlert, timeUpChime, timeUpEmail]);
 
     // Add a custom word to the word list
     const handleAddWord = () => {
@@ -185,22 +172,6 @@ const Settings = () => {
     const removedCount = DEFAULT_BAD_WORDS.filter((w) => !wordList.includes(w)).length;
     const addedCount = wordList.filter((w) => !DEFAULT_BAD_WORDS.includes(w)).length;
 
-    // Shown when SMS is enabled but no phone number is on file
-    // Clicking the link navigates to the user's profile to add one
-    const SmsPhoneWarning = () => (
-        <Alert severity="warning" sx={{ mt: 0.5, mb: 1 }} icon={false}>
-            No phone number on file.{' '}
-            <Typography
-                component="span"
-                variant="inherit"
-                sx={{ textDecoration: 'underline', cursor: 'pointer' }}
-                onClick={() => navigate(`/user/${user.username}`)}
-            >
-                Add one in your profile
-            </Typography>
-            {' '}to receive SMS alerts.
-        </Alert>
-    );
 
     return (
         <Box sx={{ maxWidth: 600, mx: 'auto', mt: 4, p: 2 }}>
@@ -341,10 +312,7 @@ const Settings = () => {
                         <FormControlLabel control={<Switch checked={wordAlertPopup} onChange={(e) => setWordAlertPopup(e.target.checked)} size="small" />} label="Show pop-up alert (word blurred)" sx={{ display: 'block', mb: 0.5 }} />
                         <FormControlLabel control={<Switch checked={wordChime} onChange={(e) => setWordChime(e.target.checked)} size="small" />} label="Play gentle chime" sx={{ display: 'block', mb: 0.5 }} />
                         <FormControlLabel control={<Switch checked={wordEmail} onChange={(e) => setWordEmail(e.target.checked)} size="small" />} label="Send email notification" sx={{ display: 'block', mb: 0.5 }} />
-                        <FormControlLabel control={<Switch checked={wordSms} onChange={(e) => setWordSms(e.target.checked)} size="small" />} label="Send SMS notification" sx={{ display: 'block', mb: 0.5 }} />
-                        {/* Warn if SMS is enabled but no phone number is on file */}
-                        {wordSms && !userPhone && <SmsPhoneWarning />}
-                        {(wordEmail || wordSms) && (
+                        {wordEmail && (
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1 }}>
                                 <TextField
                                     label="Minimum minutes between alerts"
@@ -427,9 +395,7 @@ const Settings = () => {
                         <FormControlLabel control={<Switch checked={timeUpAlert} onChange={(e) => setTimeUpAlert(e.target.checked)} size="small" />} label="Show pop-up alert" sx={{ display: 'block', mb: 0.5 }} />
                         <FormControlLabel control={<Switch checked={timeUpChime} onChange={(e) => setTimeUpChime(e.target.checked)} size="small" />} label="Play gentle chime" sx={{ display: 'block', mb: 0.5 }} />
                         <FormControlLabel control={<Switch checked={timeUpEmail} onChange={(e) => setTimeUpEmail(e.target.checked)} size="small" />} label="Send email notification" sx={{ display: 'block', mb: 0.5 }} />
-                        <FormControlLabel control={<Switch checked={timeUpSms} onChange={(e) => setTimeUpSms(e.target.checked)} size="small" />} label="Send SMS notification" sx={{ display: 'block', mb: 0.5 }} />
-                        {/* Warn if SMS is enabled but no phone number is on file */}
-                        {timeUpSms && !userPhone && <SmsPhoneWarning />}                    </Paper>
+                    </Paper>
                 )}
             </Box>
 

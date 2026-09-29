@@ -7,7 +7,7 @@ const { NotFoundError } = require('../expressError');
 const { sendNotification } = require('../notify');
 const { isDemo } = require('../demo');
 
-// Whether to send an email/SMS — never for the shared demo account
+// Whether to email the parent — never for the shared demo account
 const shouldNotify = (notify, username) => notify && notify !== 'none' && !isDemo(username);
 
 // Only continue if the logged-in user owns :sessionId
@@ -54,7 +54,7 @@ router.post('/:sessionId/detections', ensureLoggedIn, ensureSessionOwner, async 
         const user = await User.getUserByUsername(res.locals.user.username);
         const detection = await Session.addDetection(sessionId, user.id, word, context);
         if (shouldNotify(notify, user.username)) {
-            sendNotification({ notify, email: user.email, phone: user.phone, childName: childName || 'your child', word, context }).catch(console.error);
+            sendNotification({ email: user.email, childName: childName || 'your child', word, context }).catch(console.error);
         }
         res.json(detection);
     } catch (error) {
@@ -70,9 +70,7 @@ router.post('/notify-time-up', ensureLoggedIn, async (req, res) => {
         const user = await User.getUserByUsername(res.locals.user.username);
         if (shouldNotify(notify, user.username)) {
             await sendNotification({
-                notify,
                 email: user.email,
-                phone: user.phone,
                 childName: childName || 'your child',
                 type: 'time-up',
             });
@@ -106,7 +104,7 @@ router.post('/:sessionId/abandoned', authenticateBodyToken, ensureLoggedIn, ensu
             // Record the end as when the tab closed, not when the grace period ran out
             await Session.end(sessionId, (Date.now() - leftAt) / 1000);
             if (shouldNotify(notify, user.username)) {
-                await sendNotification({ notify, email: user.email, phone: user.phone, childName: childName || 'your child', type: 'abandoned' });
+                await sendNotification({ email: user.email, childName: childName || 'your child', type: 'abandoned' });
             }
         } catch (error) {
             console.error('Error handling abandoned session:', error);

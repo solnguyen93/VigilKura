@@ -1,21 +1,13 @@
-// Notification helpers — sends email (via mailer.js) and SMS (via Twilio)
+// Notification helper — emails the parent (via mailer.js)
 // Called from sessionRoutes when a bad word is detected, screen time is up, or the tab is closed
-const twilio = require('twilio');
 const { sendEmail } = require('./mailer');
 
-// Twilio client — only initialized if credentials are present in env vars
-// If missing (e.g. local dev without Twilio set up), SMS calls are skipped silently
-const twilioClient = process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN
-    ? twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN)
-    : null;
+// Email the parent about a monitoring event
+// type: 'detection' (bad word caught) | 'time-up' (screen time limit reached) | 'abandoned' (tab closed)
+async function sendNotification({ email, childName, word, context, type = 'detection' }) {
+    if (!email) return;
 
-
-// Send an email and/or SMS notification to the parent
-// notify: 'email' | 'phone' | 'both'
-// type: 'detection' (bad word caught) | 'time-up' (screen time limit reached)
-async function sendNotification({ notify, email, phone, childName, word, context, type = 'detection' }) {
-    const now = new Date();
-    const timeStr = now.toLocaleString('en-US', {
+    const timeStr = new Date().toLocaleString('en-US', {
         month: 'short', day: 'numeric', year: 'numeric',
         hour: '2-digit', minute: '2-digit', second: '2-digit',
     });
@@ -57,38 +49,8 @@ async function sendNotification({ notify, email, phone, childName, word, context
             `Log in to VigilKura to review the full session transcript and history.`,
           ].join('\n');
 
-    // SMS body is shorter since texts have character limits
-    const smsBody = isTimeUp
-        ? `VigilKura [${timeStr}]: Screen time is up for ${childName}.`
-        : isAbandoned
-        ? `VigilKura [${timeStr}]: Monitoring for ${childName} was interrupted — the browser tab was closed.`
-        : `VigilKura [${timeStr}]: "${word}" detected while monitoring ${childName}. Context: "${context}"`;
-
-    const promises = [];
-
-    // Queue email if requested and an email address is available
-    if ((notify === 'email' || notify === 'both') && email) {
-        promises.push(
-            sendEmail({ to: email, subject, text: body })
-                .catch((err) => console.error('Email send failed:', err.message))
-        );
-    }
-
-    // Queue SMS if requested, a phone number is set, and Twilio is configured
-    if ((notify === 'phone' || notify === 'both') && phone && twilioClient) {
-        console.log(`SMS attempt → to: ${phone}`);
-        promises.push(
-            twilioClient.messages.create({
-                body: smsBody,
-                messagingServiceSid: process.env.TWILIO_MESSAGING_SERVICE_SID,
-                to: phone,
-            }).then(() => console.log('SMS sent successfully'))
-              .catch((err) => console.error('SMS send failed:', err.message))
-        );
-    }
-
-    // Send email and SMS concurrently
-    await Promise.all(promises);
+    // mailer.js already logs the failure — an alert that can't be sent shouldn't break the request
+    await sendEmail({ to: email, subject, text: body }).catch(() => {});
 }
 
 module.exports = { sendNotification };
