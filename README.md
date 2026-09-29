@@ -120,9 +120,9 @@ The demo account is shared, so its profile, password, and PIN are locked and it 
 ## Tips for best results
 
 - Use Chrome — the Web Speech API only works there
-- A headset mic works best and can be shared with calls or voice chat
-- Headphones keep audio from speakers (videos, games, music) from being picked up and flagged
-- It only hears the microphone, not voices coming through headphones
+- To focus on your own child, have them use headphones or a headset — the mic mainly hears them, while voices and sounds from a call, video, or game stay in the headphones
+- Without headphones, the mic can also pick up people nearby or on a call, and audio from speakers, which may be flagged too
+- The mic may pick up other people's voices; make sure they know monitoring is on, since some states require everyone's consent
 - Leave the VigilKura tab open; closing it ends the session and alerts the parent
 
 ## Database Schema

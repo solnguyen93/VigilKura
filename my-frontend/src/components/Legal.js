@@ -92,6 +92,7 @@ const Legal = () => {
                     'VigilKura is for parents and legal guardians (18+) monitoring their own minor children.',
                     'You must own or have authority over the device being used.',
                     'Don\'t use this to monitor anyone who isn\'t your child.',
+                    'The microphone may also pick up other people nearby or on a call. Make sure they know monitoring is on — some states require everyone\'s consent.',
                     'Federally, parents can generally consent on behalf of a minor (one-party consent).',
                     'Some states like California and Illinois require all-party consent — even for parents.',
                     'It\'s your responsibility to know what\'s legal where you live.',

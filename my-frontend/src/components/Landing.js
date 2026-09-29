@@ -46,9 +46,8 @@ const Landing = () => {
             <Box component="ul" sx={{ pl: 2.5, mt: 0, mb: 0 }}>
                 {[
                     'Use Chrome — speech recognition only works there.',
-                    'A headset mic works best — it picks up your kid clearly and can be shared with calls or voice chat.',
-                    'Headphones help. Audio from speakers (videos, games, music) can be heard and flagged too.',
-                    'VigilKura only hears the microphone — not voices coming through headphones.',
+                    'To focus on your own child, have them use headphones or a headset. The mic then mainly hears them, while voices and sounds from a call, video, or game stay in the headphones.',
+                    'Without headphones, the mic can also pick up people nearby or on a call, and audio from speakers — which may be flagged too.',
                     'Leave the VigilKura tab open. Closing it ends the session and alerts you.',
                 ].map((item) => (
                     <Typography key={item} component="li" variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
