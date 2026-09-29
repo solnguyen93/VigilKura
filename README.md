@@ -15,7 +15,7 @@ A web app that listens through the browser microphone during a child's screen ti
 - Per-session screen time limit with a warning before time is up
 - Session history with full transcripts, filterable by child and time period
 - Multi-child support with per-child settings
-- Kid Mode — takes over the browser tab, hides results, and blocks the back button during monitoring
+- Kid Mode — takes over the browser tab and hides results during monitoring
 - PIN or password required to stop monitoring
 - Transcript translation at session end (OpenAI)
 - Forgot/reset password via email
