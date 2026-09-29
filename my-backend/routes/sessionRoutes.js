@@ -96,13 +96,15 @@ router.post('/:sessionId/abandoned', authenticateBodyToken, ensureLoggedIn, ensu
     const { sessionId } = req.params;
     const { childName, notify } = req.body;
     const { username } = res.locals.user;
+    const leftAt = Date.now();
 
     clearTimeout(pendingAbandons.get(sessionId));
     pendingAbandons.set(sessionId, setTimeout(async () => {
         pendingAbandons.delete(sessionId);
         try {
             const user = await User.getUserByUsername(username);
-            await Session.end(sessionId);
+            // Record the end as when the tab closed, not when the grace period ran out
+            await Session.end(sessionId, (Date.now() - leftAt) / 1000);
             if (shouldNotify(notify, user.username)) {
                 await sendNotification({ notify, email: user.email, phone: user.phone, childName: childName || 'your child', type: 'abandoned' });
             }

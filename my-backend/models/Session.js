@@ -34,7 +34,9 @@ class Session {
     }
 
     // End a session — sets ended_at and duration, translates transcript if language is non-English
-    static async end(sessionId) {
+    // endedSecondsAgo backdates the end, e.g. to when the tab actually closed rather than when
+    // the abandon grace period ran out — computed in SQL so server/database clocks can't disagree
+    static async end(sessionId, endedSecondsAgo = 0) {
         const [transcriptsRes, langRes] = await Promise.all([
             pool.query(
                 `SELECT text FROM transcripts WHERE session_id = $1 ORDER BY recorded_at ASC`,
@@ -86,8 +88,8 @@ class Session {
 
         const result = await pool.query(
             `UPDATE sessions
-             SET ended_at = NOW(),
-                 duration_seconds = EXTRACT(EPOCH FROM (NOW() - started_at))::INTEGER,
+             SET ended_at = GREATEST(started_at, NOW() - make_interval(secs => $4)),
+                 duration_seconds = GREATEST(0, EXTRACT(EPOCH FROM (NOW() - make_interval(secs => $4) - started_at)))::INTEGER,
                  translated_transcript = $2,
                  translated_language = $3
              WHERE id = $1
@@ -96,6 +98,7 @@ class Session {
                 sessionId,
                 translatedTranscript ? JSON.stringify(translatedTranscript) : null,
                 translatedTranscript ? preferredLanguage : null,
+                endedSecondsAgo,
             ],
         );
         if (!result.rows[0]) throw new NotFoundError(`No session: ${sessionId}`);
