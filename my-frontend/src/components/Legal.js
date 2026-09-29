@@ -68,8 +68,8 @@ const Legal = () => {
             {/* Privacy: microphone and audio */}
             <Section icon={<MicOutlinedIcon color="primary" fontSize="small" />} title="Microphone & audio">
                 <BulletList items={[
-                    'The app uses your microphone during active sessions to transcribe speech in real time.',
-                    'This is handled entirely by your browser — no audio is ever recorded or sent to our servers.',
+                    'The app uses the microphone during active sessions to transcribe speech in real time.',
+                    'Transcription is done by Chrome\'s speech recognition, which sends audio to Google\'s speech service. VigilKura never records audio or receives it on our servers.',
                     'Only the resulting text transcript is saved.',
                     'SMS alerts are only sent if you opted in with a phone number.',
                 ]} />

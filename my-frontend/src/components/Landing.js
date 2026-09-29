@@ -7,6 +7,7 @@ import MicOutlinedIcon from '@mui/icons-material/MicOutlined';
 import StorageOutlinedIcon from '@mui/icons-material/StorageOutlined';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import GavelOutlinedIcon from '@mui/icons-material/GavelOutlined';
+import TipsAndUpdatesOutlinedIcon from '@mui/icons-material/TipsAndUpdatesOutlined';
 
 // Reusable section layout with icon and title
 const Section = ({ icon, title, children }) => (
@@ -28,16 +29,33 @@ const Landing = () => {
             <Typography variant="h4">VigilKura</Typography>
         </Box>
         <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
-            A simple tool to help parents stay aware of what their kids are saying during screen time.
+            A web app that helps parents stay aware of what their kids are saying during screen time.
         </Typography>
 
         <Section icon={<MicOutlinedIcon color="primary" fontSize="small" />} title="What it does">
             <Typography variant="body2" color="text.secondary">
-                While monitoring, VigilKura listens through your device's microphone and checks for words
-                from your custom list. If something is detected, you'll get an alert — via the app, email,
-                or SMS. You can also set screen time limits with reminders. Everything is logged in History
-                so you can review sessions later.
+                Start monitoring in a Chrome tab on the computer your kid is using. VigilKura listens through
+                the microphone, shows a live transcript, and checks what's said against a word list you set
+                for each child. If a flagged word comes up, you get a text or email. You can set a time limit
+                for each session, and you're alerted if the tab is closed early. Every session is saved as a
+                transcript in History so you can look back at what was said.
             </Typography>
+        </Section>
+
+        <Section icon={<TipsAndUpdatesOutlinedIcon color="primary" fontSize="small" />} title="Tips for best results">
+            <Box component="ul" sx={{ pl: 2.5, mt: 0, mb: 0 }}>
+                {[
+                    'Use Chrome — speech recognition only works there.',
+                    'A headset mic works best — it picks up your kid clearly and can be shared with calls or voice chat.',
+                    'Headphones help. Audio from speakers (videos, games, music) can be heard and flagged too.',
+                    'VigilKura only hears the microphone — not voices coming through headphones.',
+                    'Leave the VigilKura tab open. Closing it ends the session and alerts you.',
+                ].map((item) => (
+                    <Typography key={item} component="li" variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
+                        {item}
+                    </Typography>
+                ))}
+            </Box>
         </Section>
 
         <Section icon={<StorageOutlinedIcon color="primary" fontSize="small" />} title="What we store">
@@ -59,9 +77,10 @@ const Landing = () => {
             </Box>
             <Paper variant="outlined" sx={{ mt: 1.5, p: 1.5, bgcolor: 'action.hover' }}>
                 <Typography variant="body2" color="text.secondary">
-                    <strong>No audio is ever recorded or uploaded.</strong> Speech is transcribed locally
-                    on your device using your browser's built-in speech recognition. Only the resulting
-                    text is stored. Notifications are sent through Gmail and Twilio (SMS).
+                    <strong>VigilKura never records or stores audio.</strong> Speech is transcribed by
+                    Chrome's built-in speech recognition, which sends the audio to Google's speech service
+                    to turn it into text. Only that text reaches VigilKura and is stored. Notifications are
+                    sent through Gmail and Twilio (SMS).
                 </Typography>
             </Paper>
         </Section>
@@ -81,7 +100,7 @@ const Landing = () => {
                 {[
                     'VigilKura is intended for parents or legal guardians monitoring their own minor children on devices they control.',
                     'Monitoring someone without their knowledge may violate laws in your area. You are responsible for using this legally.',
-                    'Speech recognition accuracy depends on your browser and microphone — some words may be missed or misheard.',
+                    'Speech recognition accuracy depends on your browser and microphone — some words may be missed or misheard. English only for now.',
                     'VigilKura is not a substitute for active parental involvement.',
                 ].map((item) => (
                     <Typography key={item} component="li" variant="body2" color="text.secondary" sx={{ mb: 0.75 }}>

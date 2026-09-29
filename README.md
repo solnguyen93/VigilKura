@@ -1,10 +1,13 @@
 # VigilKura
 
-A web app that listens through the browser microphone during a child's screen time and texts or emails parents when it hears words they've flagged. Parents set a word list and a screen-time timer for each child. Kid Mode takes over the browser tab so the session can't be stopped without a PIN, and the parent is alerted if the tab is closed. Parents can review past sessions as transcripts, optionally translated into their own language with OpenAI.
+**Live demo:** https://vigilkura.onrender.com
+
+A web app that listens through the browser microphone during a child's screen time, shows a live transcript, and texts or emails parents when it hears words they've flagged. Parents set a word list and a session time limit for each child. Kid Mode takes over the tab so monitoring can't be stopped without a PIN, and you're alerted if the tab is closed. Past sessions are saved as transcripts, optionally translated into the parent's language with OpenAI.
 
 ## Features
 
 - Real-time word detection via browser speech recognition (Chrome, English)
+- Live transcript while monitoring, with flagged words blurred
 - Custom word list per child with default profanity list
 - Email and SMS alerts on detection or when the session time limit is reached
 - Configurable minimum time between alerts to prevent notification spam
@@ -112,6 +115,16 @@ A test account is available on the sign-in page:
 - **Password:** password  
 - **PIN:** 0000
 
+The demo account is shared, so its profile, password, and PIN are locked and it never sends email or SMS. It also gets a text box while monitoring to simulate speech by typing, so you can try word detection without a microphone.
+
+## Tips for best results
+
+- Use Chrome — the Web Speech API only works there
+- A headset mic works best and can be shared with calls or voice chat
+- Headphones keep audio from speakers (videos, games, music) from being picked up and flagged
+- It only hears the microphone, not voices coming through headphones
+- Leave the VigilKura tab open; closing it ends the session and alerts the parent
+
 ## Database Schema
 
 ### users
@@ -171,6 +184,6 @@ A test account is available on the sign-in page:
 ## Notes
 
 - Speech recognition only works in Chrome (Web Speech API)
-- No audio is ever recorded or uploaded — only the transcribed text is stored
+- VigilKura never records or stores audio. Chrome's speech recognition sends audio to Google's speech service for transcription; only the resulting text reaches the VigilKura backend
 - SMS requires an approved Twilio toll-free number with active verification
 - Monitoring someone without their knowledge may violate laws in your area — this tool is intended for parents monitoring their own minor children on devices they own
