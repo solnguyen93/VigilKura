@@ -5,6 +5,43 @@ const OpenAI = require('openai');
 // OpenAI client — used to generate a session summary when the session ends
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
+// Translate transcript chunks in batches so long sessions don't overflow one response.
+// Each batch must come back with exactly as many lines as it sent, or the translated
+// transcript would no longer line up with the original; a mismatch fails the whole
+// translation rather than saving misaligned text.
+const TRANSLATION_BATCH_SIZE = 40;
+
+async function translateChunks(texts, language) {
+    const translated = [];
+    for (let start = 0; start < texts.length; start += TRANSLATION_BATCH_SIZE) {
+        const batch = texts.slice(start, start + TRANSLATION_BATCH_SIZE);
+        const completion = await openai.chat.completions.create({
+            model: 'gpt-4o-mini',
+            messages: [
+                {
+                    role: 'system',
+                    content: `Detect the language of each transcript chunk and translate it to ${language}. If a chunk is already in ${language}, keep it as-is. Return a JSON object with a "translations" array in the same order and count as the input chunks.`,
+                },
+                { role: 'user', content: batch.map((text, i) => `${i + 1}. ${text}`).join('\n') },
+            ],
+            response_format: { type: 'json_object' },
+            max_tokens: 4000,
+        });
+        const parsed = JSON.parse(completion.choices[0].message.content);
+        // OpenAI sometimes uses different key names — grab the first array value found
+        const arr = parsed.translations || parsed.translated || parsed.chunks
+            || Object.values(parsed).find((v) => Array.isArray(v));
+        if (!Array.isArray(arr) || arr.length !== batch.length) {
+            throw new Error(`expected ${batch.length} translations, got ${Array.isArray(arr) ? arr.length : 'none'}`);
+        }
+        // Normalize to plain strings — OpenAI sometimes returns objects instead of strings
+        translated.push(...arr.map((item) =>
+            typeof item === 'string' ? item : item.translatedText || item.text || String(item)
+        ));
+    }
+    return translated;
+}
+
 class Session {
     // Start a new monitoring session for a user and optional child
     // The child is only linked if it belongs to this user
@@ -51,7 +88,9 @@ class Session {
         ]);
 
         const preferredLanguage = langRes.rows[0]?.language || 'English';
-        const needsTranslation = transcriptsRes.rows.length > 0;
+        // Speech is recognized as English, so an English-preferring parent needs no translation
+        const needsTranslation = transcriptsRes.rows.length > 0
+            && preferredLanguage.toLowerCase() !== 'english';
 
         console.log(`Session ${sessionId} end — chunks: ${transcriptsRes.rows.length}, lang: ${preferredLanguage}, willTranslate: ${needsTranslation}`);
 
@@ -59,28 +98,11 @@ class Session {
 
         if (needsTranslation && process.env.OPENAI_API_KEY) {
             try {
-                const chunks = transcriptsRes.rows.map((t, i) => `${i + 1}. ${t.text}`).join('\n');
-                const completion = await openai.chat.completions.create({
-                    model: 'gpt-4o-mini',
-                    messages: [
-                        {
-                            role: 'system',
-                            content: `Detect the language of each transcript chunk and translate it to ${preferredLanguage}. If a chunk is already in ${preferredLanguage}, keep it as-is. Return a JSON object with a "translations" array in the same order and count as the input chunks.`,
-                        },
-                        { role: 'user', content: chunks },
-                    ],
-                    response_format: { type: 'json_object' },
-                    max_tokens: 600,
-                });
-                const parsed = JSON.parse(completion.choices[0].message.content);
-                // OpenAI sometimes uses different key names — grab the first array value found
-                const arr = parsed.translations || parsed.translated || parsed.chunks
-                    || Object.values(parsed).find((v) => Array.isArray(v));
-                // Normalize to plain strings — OpenAI sometimes returns objects instead of strings
-                if (Array.isArray(arr)) translatedTranscript = arr.map((item) =>
-                    typeof item === 'string' ? item : item.translatedText || item.text || String(item)
+                translatedTranscript = await translateChunks(
+                    transcriptsRes.rows.map((t) => t.text),
+                    preferredLanguage,
                 );
-                console.log('Translation result:', translatedTranscript);
+                console.log(`Session ${sessionId} translated ${translatedTranscript.length} chunks`);
             } catch (err) {
                 console.error('OpenAI translation failed:', err.message);
             }
