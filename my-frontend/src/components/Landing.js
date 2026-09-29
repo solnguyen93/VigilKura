@@ -1,6 +1,7 @@
 import React from 'react';
 import { Box, Typography, Divider, Paper } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
+import { hasInAppHistory } from '../hooks/useGoBack';
 import IconButton from '@mui/material/IconButton';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import MicOutlinedIcon from '@mui/icons-material/MicOutlined';
@@ -25,7 +26,7 @@ const Landing = () => {
     return (
     <Box sx={{ maxWidth: 680, mx: 'auto', mt: 4, p: 3 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-            <IconButton size="small" onClick={() => navigate(-1)}><ArrowBackIcon /></IconButton>
+            {hasInAppHistory() && <IconButton size="small" onClick={() => navigate(-1)}><ArrowBackIcon /></IconButton>}
             <Typography variant="h4">VigilKura</Typography>
         </Box>
         <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>

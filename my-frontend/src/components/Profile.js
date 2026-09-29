@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import VigilKuraApi from '../api.js';
 import { useNavigate, useParams } from 'react-router-dom';
+import useGoBack from '../hooks/useGoBack';
 import useDataFetching from '../hooks/useDataFetching';
 import PasswordField from './PasswordField';
 import { useAuth } from '../AuthContext';
@@ -101,6 +102,7 @@ const InlineField = ({ label, value, onSave, inputProps = {}, transform, placeho
 const Profile = () => {
     const { username } = useParams();
     const navigate = useNavigate();
+    const goBack = useGoBack('/monitor');
     const { user: authUser, setUser, logout } = useAuth();
 
     const [name, setName] = useState('');
@@ -294,7 +296,7 @@ const Profile = () => {
         <Box sx={{ maxWidth: 480, mx: 'auto', mt: 4, p: 2 }}>
             {/* Header */}
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 3 }}>
-                <IconButton onClick={() => navigate(-1)} size="small"><ArrowBackIcon /></IconButton>
+                <IconButton onClick={goBack} size="small"><ArrowBackIcon /></IconButton>
                 <Typography variant="h5">{name}</Typography>
                 <Typography variant="body2" color="text.secondary">@{username}</Typography>
                 {authUser?.isAdmin && <Chip label="Admin" size="small" color="primary" />}

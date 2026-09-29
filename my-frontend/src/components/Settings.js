@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import useGoBack from '../hooks/useGoBack';
 import { useAuth } from '../AuthContext';
 import VigilKuraApi from '../api.js';
 import { Box, Typography, TextField, Button, Chip, Divider, FormControlLabel, Switch, Paper, Alert } from '@mui/material';
@@ -44,6 +45,7 @@ const loadSettings = (settings = {}) => ({
 const Settings = () => {
     const { user } = useAuth();
     const navigate = useNavigate();
+    const goBack = useGoBack('/monitor');
 
     // Child selector state
     const [children, setChildren] = useState([]);
@@ -184,7 +186,7 @@ const Settings = () => {
         <Box sx={{ maxWidth: 600, mx: 'auto', mt: 4, p: 2 }}>
             {/* Header */}
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 3 }}>
-                <IconButton onClick={() => navigate(-1)} size="small"><ArrowBackIcon /></IconButton>
+                <IconButton onClick={goBack} size="small"><ArrowBackIcon /></IconButton>
                 <Typography variant="h4">Monitor Settings</Typography>
             </Box>
 

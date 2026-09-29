@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import useGoBack from '../hooks/useGoBack';
 import { useAuth } from '../AuthContext';
 import VigilKuraApi from '../api.js';
 import {
@@ -197,6 +198,7 @@ const PERIODS = [
 const History = () => {
     const { user } = useAuth();
     const navigate = useNavigate();
+    const goBack = useGoBack('/monitor');
     const [sessions, setSessions] = useState(null);
     const [loading, setLoading] = useState(true);
     const [period, setPeriod] = useState('today');
@@ -224,7 +226,7 @@ const History = () => {
     return (
         <Box sx={{ maxWidth: 700, mx: 'auto', mt: 4, p: 2 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-                <IconButton onClick={() => navigate(-1)} size="small"><ArrowBackIcon /></IconButton>
+                <IconButton onClick={goBack} size="small"><ArrowBackIcon /></IconButton>
                 <Typography variant="h4">History</Typography>
             </Box>
 

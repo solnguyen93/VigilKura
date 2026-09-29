@@ -1,6 +1,6 @@
 import React from 'react';
 import { Box, Typography, Divider, Paper } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
+import useGoBack from '../hooks/useGoBack';
 import IconButton from '@mui/material/IconButton';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
@@ -43,12 +43,12 @@ const Note = ({ children }) => (
 );
 
 const Legal = () => {
-    const navigate = useNavigate();
+    const goBack = useGoBack('/');
     return (
         <Box sx={{ maxWidth: 680, mx: 'auto', mt: 4, p: 3 }}>
             {/* Header */}
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                <IconButton size="small" onClick={() => navigate(-1)}><ArrowBackIcon /></IconButton>
+                <IconButton size="small" onClick={goBack}><ArrowBackIcon /></IconButton>
                 <Typography variant="h4">Privacy & Terms</Typography>
             </Box>
             <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 2 }}>
