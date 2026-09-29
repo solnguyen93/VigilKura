@@ -53,7 +53,7 @@ const Legal = () => {
                 <Chip label="Beta" size="small" color="warning" variant="outlined" />
             </Box>
             <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 2 }}>
-                Last updated: September 2026 · A legally reviewed version will replace this before public launch.
+                Last updated: September 2026
             </Typography>
 
             {/* Plain-language summary */}
@@ -151,7 +151,7 @@ const Legal = () => {
                 <BulletList items={[
                     'VigilKura is in beta — features may change, break, or be reset.',
                     'Speech recognition isn\'t perfect and currently understands English only. Words can be missed or misheard, and alerts can be wrong.',
-                    'Kid Mode locks the VigilKura browser tab, not the computer. Your child can still use other apps and tabs, and closing or reloading the tab alerts you.',
+                    'Kid Mode locks the VigilKura browser tab, not the computer. Your child can still use other apps and tabs. Reloading the tab picks monitoring back up; closing it alerts you.',
                     'VigilKura supports parental supervision — it doesn\'t replace it.',
                 ]} />
             </Section>

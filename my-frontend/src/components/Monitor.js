@@ -88,6 +88,9 @@ const blurWords = (text, regex) => {
 // How many finished lines the live transcript keeps on screen
 const MAX_LIVE_LINES = 50;
 
+// A saved active session is only resumed if monitoring was running this recently
+const RESUME_WINDOW_MS = 2 * 60 * 1000;
+
 // Format seconds as "1h 30m 05s" — used for both the live timer and session headers
 const formatTime = (secs, pad = false) => {
     if (!secs) return pad ? '0s' : '< 1s';
@@ -248,10 +251,11 @@ const Monitor = () => {
 
     // The active session is saved in localStorage so reloading the page resumes it
     // instead of silently ending monitoring and unlocking Kid Mode
-    const saveActiveSession = (updates) => {
-        const current = JSON.parse(localStorage.getItem(lsKey('activeSession')) || '{}');
-        localStorage.setItem(lsKey('activeSession'), JSON.stringify({ ...current, ...updates }));
-    };
+    const saveActiveSession = useCallback((updates) => {
+        const current = localStorage.getItem(lsKey('activeSession'));
+        if (!current) return; // Monitoring already stopped — don't recreate it
+        localStorage.setItem(lsKey('activeSession'), JSON.stringify({ ...JSON.parse(current), ...updates }));
+    }, [lsKey]);
 
     // Refs so the speech recognition callback always has up-to-date settings
     const wordDetectionEnabledRef = useRef(false);
@@ -298,7 +302,13 @@ const Monitor = () => {
         VigilKuraApi.getChildren()
             .then((kids) => {
                 setChildren(kids);
-                const active = JSON.parse(localStorage.getItem(lsKey('activeSession')) || 'null');
+                let active = JSON.parse(localStorage.getItem(lsKey('activeSession')) || 'null');
+                // Only resume a session that was live moments ago (a reload) — not one left over
+                // from a tab that closed long ago, which would drop the parent straight into Kid Mode
+                if (active && Date.now() - (active.lastActiveAt || 0) > RESUME_WINDOW_MS) {
+                    localStorage.removeItem(lsKey('activeSession'));
+                    active = null;
+                }
                 const savedId = active ? String(active.childId) : localStorage.getItem(lsKey('selectedChildId'));
                 const match = savedId ? kids.find((c) => String(c.id) === savedId) : null;
                 const child = match || kids[0] || null;
@@ -324,9 +334,11 @@ const Monitor = () => {
             e.returnValue = '';
         };
         // Fires only once the page is actually going away (closed or reloaded), so a cancelled
-        // prompt doesn't end the session. A reload resumes monitoring as a new session.
+        // prompt doesn't end the session. The backend waits briefly before ending it, so a
+        // reload can pick the same session back up without alerting the parent.
         const handlePageHide = () => {
             if (!sessionIdRef.current) return;
+            saveActiveSession({ lastActiveAt: Date.now() });
             // sendBeacon can't set headers, so the JWT goes in the body
             const params = new URLSearchParams({
                 token: localStorage.getItem('token') || '',
@@ -344,7 +356,7 @@ const Monitor = () => {
             window.removeEventListener('beforeunload', handleBeforeUnload);
             window.removeEventListener('pagehide', handlePageHide);
         };
-    }, [kidMode]);
+    }, [kidMode, saveActiveSession]);
 
     // Keep the live transcript scrolled to the newest line
     useEffect(() => {
@@ -396,6 +408,8 @@ const Monitor = () => {
         setShowTimeUpBanner(timeUp && settings.timeUpAlert !== false);
 
         timerRef.current = setInterval(() => {
+            // Heartbeat for the resume window — a reload only resumes a recently active session
+            saveActiveSession({ lastActiveAt: Date.now() });
             setSessionSeconds((s) => {
                 const next = s + 1;
 
@@ -433,18 +447,37 @@ const Monitor = () => {
     // it keeps the original start time so the screen time clock doesn't reset.
     const startListening = async (child, resume = null) => {
         activeChildRef.current = child;
-        try {
-            const session = await VigilKuraApi.startSession(child?.id || null);
-            sessionIdRef.current = session.id;
-        } catch (error) {
-            console.error('Failed to start session:', error);
+        if (resume) {
+            // Pick the same session back up — if it already ended (the page was gone too long),
+            // don't restart monitoring; the parent has been alerted that the tab was closed
+            try {
+                await VigilKuraApi.resumeSession(resume.sessionId);
+                sessionIdRef.current = resume.sessionId;
+            } catch {
+                localStorage.removeItem(lsKey('activeSession'));
+                return;
+            }
+        } else {
+            try {
+                const session = await VigilKuraApi.startSession(child?.id || null);
+                sessionIdRef.current = session.id;
+            } catch (error) {
+                console.error('Failed to start session:', error);
+            }
         }
 
         const startedAtMs = resume?.startedAt || Date.now();
         sessionStartRef.current = new Date(startedAtMs).toISOString();
         localStorage.setItem(
             lsKey('activeSession'),
-            JSON.stringify({ childId: child?.id ?? null, startedAt: startedAtMs, warned: !!resume?.warned, timeUp: !!resume?.timeUp }),
+            JSON.stringify({
+                sessionId: sessionIdRef.current,
+                childId: child?.id ?? null,
+                startedAt: startedAtMs,
+                lastActiveAt: Date.now(),
+                warned: !!resume?.warned,
+                timeUp: !!resume?.timeUp,
+            }),
         );
 
         // Clear previous last session data

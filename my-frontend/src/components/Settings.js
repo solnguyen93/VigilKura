@@ -34,7 +34,6 @@ const loadSettings = (settings = {}) => ({
     durationMinutes: settings.durationMinutes ?? 0,
     warningEnabled: settings.warningEnabled || false,
     warningMinutes: settings.warningMinutes ?? 5,
-    screenTimeAction: settings.screenTimeAction || 'notify',
     // Screen time notification settings — alert on by default
     timeUpAlert: settings.timeUpAlert !== false,
     timeUpChime: settings.timeUpChime || false,
@@ -71,7 +70,6 @@ const Settings = () => {
     const [durationMinutes, setDurationMinutes] = useState(0);
     const [warningEnabled, setWarningEnabled] = useState(false);
     const [warningMinutes, setWarningMinutes] = useState(5);
-    const [screenTimeAction, setScreenTimeAction] = useState('notify');
 
     // Screen time notification settings
     const [timeUpAlert, setTimeUpAlert] = useState(true);
@@ -121,7 +119,6 @@ const Settings = () => {
         setDurationMinutes(s.durationMinutes);
         setWarningEnabled(s.warningEnabled);
         setWarningMinutes(s.warningMinutes);
-        setScreenTimeAction(s.screenTimeAction);
         setTimeUpAlert(s.timeUpAlert !== false);
         setTimeUpChime(s.timeUpChime || false);
         setTimeUpEmail(s.timeUpEmail || false);
@@ -161,12 +158,12 @@ const Settings = () => {
             wordList,
             wordDetectionEnabled, wordAlertPopup, wordChime, wordEmail, wordSms, notifCooldown,
             durationEnabled, durationHours, durationMinutes,
-            warningEnabled, warningMinutes, screenTimeAction,
+            warningEnabled, warningMinutes,
             timeUpAlert, timeUpChime, timeUpEmail, timeUpSms,
         };
         scheduleAutoSave(settings, selectedChild);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [wordList, wordDetectionEnabled, wordAlertPopup, wordChime, wordEmail, wordSms, notifCooldown, durationEnabled, durationHours, durationMinutes, warningEnabled, warningMinutes, screenTimeAction, timeUpAlert, timeUpChime, timeUpEmail, timeUpSms]);
+    }, [wordList, wordDetectionEnabled, wordAlertPopup, wordChime, wordEmail, wordSms, notifCooldown, durationEnabled, durationHours, durationMinutes, warningEnabled, warningMinutes, timeUpAlert, timeUpChime, timeUpEmail, timeUpSms]);
 
     // Add a custom word to the word list
     const handleAddWord = () => {
@@ -432,9 +429,7 @@ const Settings = () => {
                         <FormControlLabel control={<Switch checked={timeUpEmail} onChange={(e) => setTimeUpEmail(e.target.checked)} size="small" />} label="Send email notification" sx={{ display: 'block', mb: 0.5 }} />
                         <FormControlLabel control={<Switch checked={timeUpSms} onChange={(e) => setTimeUpSms(e.target.checked)} size="small" />} label="Send SMS notification" sx={{ display: 'block', mb: 0.5 }} />
                         {/* Warn if SMS is enabled but no phone number is on file */}
-                        {timeUpSms && !userPhone && <SmsPhoneWarning />}
-                        <FormControlLabel control={<Switch disabled size="small" />} label={<>Block screen <Typography component="span" variant="caption" color="text.secondary">(coming soon)</Typography></>} sx={{ display: 'block', mb: 0.5 }} />
-                    </Paper>
+                        {timeUpSms && !userPhone && <SmsPhoneWarning />}                    </Paper>
                 )}
             </Box>
 

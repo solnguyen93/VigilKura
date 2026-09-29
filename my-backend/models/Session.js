@@ -18,6 +18,12 @@ class Session {
         return result.rows[0];
     }
 
+    // Whether a session is still running (hasn't been ended)
+    static async isActive(sessionId) {
+        const result = await pool.query(`SELECT ended_at IS NULL AS active FROM sessions WHERE id = $1`, [sessionId]);
+        return !!result.rows[0]?.active;
+    }
+
     // Throw NotFoundError unless the session exists and belongs to this user
     static async ensureOwner(sessionId, userId) {
         const result = await pool.query(

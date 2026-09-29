@@ -84,20 +84,48 @@ router.post('/notify-time-up', ensureLoggedIn, async (req, res) => {
     }
 });
 
-// End a session when the tab is closed
+// A reload and a closed tab look the same to the browser, so an abandoned session isn't ended
+// right away. If the page comes back and resumes it within this window it was a reload —
+// otherwise the session is ended and the parent is alerted.
+const ABANDON_GRACE_MS = 45 * 1000;
+const pendingAbandons = new Map(); // sessionId -> timeout
+
+// The monitoring page was closed or reloaded
 // sendBeacon can't send auth headers, so the JWT comes in the request body instead
-router.post('/:sessionId/abandoned', authenticateBodyToken, ensureLoggedIn, ensureSessionOwner, async (req, res) => {
+router.post('/:sessionId/abandoned', authenticateBodyToken, ensureLoggedIn, ensureSessionOwner, (req, res) => {
     const { sessionId } = req.params;
     const { childName, notify } = req.body;
+    const { username } = res.locals.user;
+
+    clearTimeout(pendingAbandons.get(sessionId));
+    pendingAbandons.set(sessionId, setTimeout(async () => {
+        pendingAbandons.delete(sessionId);
+        try {
+            const user = await User.getUserByUsername(username);
+            await Session.end(sessionId);
+            if (shouldNotify(notify, user.username)) {
+                await sendNotification({ notify, email: user.email, phone: user.phone, childName: childName || 'your child', type: 'abandoned' });
+            }
+        } catch (error) {
+            console.error('Error handling abandoned session:', error);
+        }
+    }, ABANDON_GRACE_MS));
+    res.json({ success: true });
+});
+
+// Continue a session after the monitoring page reloads — cancels the pending abandon
+// 409 if the session already ended, so the page knows to not resume
+router.put('/:sessionId/resume', ensureLoggedIn, ensureSessionOwner, async (req, res) => {
+    const { sessionId } = req.params;
     try {
-        const user = await User.getUserByUsername(res.locals.user.username);
-        await Session.end(sessionId);
-        if (shouldNotify(notify, user.username)) {
-            sendNotification({ notify, email: user.email, phone: user.phone, childName: childName || 'your child', type: 'abandoned' }).catch(console.error);
+        clearTimeout(pendingAbandons.get(sessionId));
+        pendingAbandons.delete(sessionId);
+        if (!(await Session.isActive(sessionId))) {
+            return res.status(409).json({ message: 'Session has already ended.' });
         }
         res.json({ success: true });
     } catch (error) {
-        console.error('Error handling abandoned session:', error);
+        console.error('Error resuming session:', error);
         res.status(error.status || 500).json({ message: error.message });
     }
 });

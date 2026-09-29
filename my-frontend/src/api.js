@@ -42,6 +42,10 @@ class VigilKuraApi {
         return VigilKuraApi.request('sessions/start', { childId }, 'post');
     }
 
+    static async resumeSession(sessionId) {
+        return VigilKuraApi.request(`sessions/${sessionId}/resume`, {}, 'put');
+    }
+
     static async endSession(sessionId) {
         return VigilKuraApi.request(`sessions/${sessionId}/end`, {}, 'put');
     }
