@@ -38,7 +38,7 @@ const Landing = () => {
                 Start monitoring in a Chrome or Safari tab on the computer your kid is using. VigilKura listens through
                 the microphone, shows a live transcript, and checks what's said against a word list you set
                 for each child. If a flagged word comes up, you get an email. You can set a time limit
-                for each session, and you're alerted if the tab is closed early. Every session is saved as a
+                for each session, and you're alerted if the tab is closed or left early. Every session is saved as a
                 transcript in History so you can look back at what was said.
             </Typography>
         </Section>
@@ -49,7 +49,7 @@ const Landing = () => {
                     'Use Chrome or Safari — speech recognition doesn\'t work reliably in other browsers, like Edge or Firefox.',
                     'To focus on your own child, have them use headphones or a headset. The mic then mainly hears them, while voices and sounds from a call, video, or game stay in the headphones.',
                     'Without headphones, the mic can also pick up people nearby or on a call, and audio from speakers — which may be flagged too.',
-                    'Leave the VigilKura tab open. Closing it ends the session and alerts you.',
+                    'Keep the VigilKura tab open. Closing it or leaving with the Back button ends the session and alerts you.',
                 ].map((item) => (
                     <Typography key={item} component="li" variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
                         {item}

@@ -148,7 +148,7 @@ const Legal = () => {
             <Section icon={<ScienceOutlinedIcon color="primary" fontSize="small" />} title="Limitations">
                 <BulletList items={[
                     'Speech recognition isn\'t perfect and currently understands English only. Words can be missed or misheard, and alerts can be wrong.',
-                    'Kid Mode locks the VigilKura browser tab, not the computer. Your child can still use other apps and tabs. Reloading the tab picks monitoring back up; closing it alerts you.',
+                    'Monitoring only runs in the VigilKura browser tab; it doesn\'t control the computer. Your child can still use other apps and tabs. Reloading the tab picks monitoring back up; closing it or leaving with the Back button alerts you.',
                     'VigilKura supports parental supervision — it doesn\'t replace it.',
                 ]} />
             </Section>

@@ -11,7 +11,7 @@ A web app that listens through the browser microphone during a child's screen ti
 - Custom word list per child with default profanity list
 - Email alerts on detection or when the session time limit is reached
 - Configurable minimum time between alerts to prevent notification spam
-- Parent emailed if the browser tab is closed during monitoring and not reopened within 45 seconds (on by default, per child)
+- Parent emailed if the VigilKura tab is closed or left (e.g. with the Back button) during monitoring and not reopened within 30 seconds (on by default, per child)
 - Per-session screen time limit with a warning before time is up
 - Session history with full transcripts, filterable by child and time period
 - Multi-child support with per-child settings
@@ -145,7 +145,7 @@ The demo account is shared, so its profile, password, and PIN are locked and it 
 - To focus on your own child, have them use headphones or a headset — the mic mainly hears them, while voices and sounds from a call, video, or game stay in the headphones
 - Without headphones, the mic can also pick up people nearby or on a call, and audio from speakers, which may be flagged too
 - The mic may pick up other people's voices; make sure they know monitoring is on, since some states require everyone's consent
-- Leave the VigilKura tab open; closing it ends the session and alerts the parent
+- Keep the VigilKura tab open; closing it or leaving with the Back button ends the session and alerts the parent
 
 ## Database Schema
 

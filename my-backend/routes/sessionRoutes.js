@@ -85,7 +85,7 @@ router.post('/notify-time-up', ensureLoggedIn, async (req, res) => {
 // A reload and a closed tab look the same to the browser, so an abandoned session isn't ended
 // right away. If the page comes back and resumes it within this window it was a reload —
 // otherwise the session is ended and the parent is alerted.
-const ABANDON_GRACE_MS = 45 * 1000;
+const ABANDON_GRACE_MS = 30 * 1000;
 const pendingAbandons = new Map(); // sessionId -> timeout
 
 // The monitoring page was closed or reloaded

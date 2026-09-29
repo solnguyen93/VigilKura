@@ -417,7 +417,7 @@ const Settings = () => {
                     <Switch checked={interruptedEmail} onChange={(e) => setInterruptedEmail(e.target.checked)} />
                 </Box>
                 <Typography variant="body2" color="text.secondary">
-                    Email me if the VigilKura tab is closed during monitoring and isn't reopened within 45 seconds.
+                    Email me if the VigilKura tab is closed or left (for example with the Back button) during monitoring and isn't reopened within 30 seconds.
                     Reloading the page doesn't count.
                 </Typography>
             </Box>

@@ -35,7 +35,7 @@ async function sendNotification({ email, childName, word, context, type = 'detec
             ``,
             `  Time: ${timeStr}`,
             ``,
-            `The browser tab was closed while monitoring was active and wasn't reopened.`,
+            `The VigilKura tab was closed or left (for example with the Back button) while monitoring was active, and wasn't reopened.`,
             ``,
             `Log in to VigilKura to review the session.`,
           ].join('\n')
