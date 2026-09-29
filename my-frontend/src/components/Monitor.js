@@ -48,20 +48,45 @@ const playChime = () => {
     });
 };
 
-// Return the matched bad word in the text, or null if none found
+// Regex source matching one word from the list
 // Uses \b word boundaries for ASCII; plain match for non-ASCII (e.g. Vietnamese)
+const wordPattern = (word) => {
+    const normalized = word.normalize('NFC');
+    const escaped = normalized.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const isAscii = [...normalized].every((ch) => ch.charCodeAt(0) <= 0x7f);
+    return isAscii ? `\\b${escaped}\\b` : escaped;
+};
+
+// Return the matched bad word in the text, or null if none found
 const containsBadWord = (text, wordList) => {
     const lower = text.normalize('NFC').toLowerCase();
-    return (
-        wordList.find((word) => {
-            const normalized = word.normalize('NFC');
-            const escaped = normalized.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-            const isAscii = [...normalized].every((ch) => ch.charCodeAt(0) <= 0x7f);
-            const pattern = isAscii ? new RegExp(`\\b${escaped}\\b`, 'i') : new RegExp(escaped, 'i');
-            return pattern.test(lower);
-        }) || null
+    return wordList.find((word) => new RegExp(wordPattern(word), 'i').test(lower)) || null;
+};
+
+// One regex matching any word in the list, with the match captured so split() keeps it
+// Longest words first so "asshole" is matched whole rather than as "ass"
+const anyWordRegex = (wordList) => {
+    if (!wordList.length) return null;
+    const alternatives = [...wordList].sort((a, b) => b.length - a.length).map(wordPattern);
+    return new RegExp(`(${alternatives.join('|')})`, 'gi');
+};
+
+// Blur every flagged word in a line of text — odd split() indices are the captured matches
+const blurWords = (text, regex) => {
+    if (!regex) return text;
+    return text.normalize('NFC').split(regex).map((part, i) =>
+        i % 2 === 1 ? (
+            <Box key={i} component="span" sx={{ filter: 'blur(4px)', userSelect: 'none' }}>
+                {part}
+            </Box>
+        ) : (
+            part
+        ),
     );
 };
+
+// How many finished lines the live transcript keeps on screen
+const MAX_LIVE_LINES = 50;
 
 // Format seconds as "1h 30m 05s" — used for both the live timer and session headers
 const formatTime = (secs, pad = false) => {
@@ -169,6 +194,12 @@ const Monitor = () => {
 
     const [isListening, setIsListening] = useState(false);
     const [sessionSeconds, setSessionSeconds] = useState(0);
+
+    // Live transcript — finished lines plus the phrase still being recognized
+    const [liveLines, setLiveLines] = useState([]);
+    const [interimText, setInterimText] = useState('');
+    const liveBoxRef = useRef(null);
+    const blurRegexRef = useRef(null);
 
     const [alerts, setAlerts] = useState([]);
     const [showAllDetected, setShowAllDetected] = useState(false);
@@ -291,11 +322,19 @@ const Monitor = () => {
         };
     }, [kidMode, selectedChild?.name]);
 
-    // Handle a final speech recognition result — save transcript and check for bad words
+    // Keep the live transcript scrolled to the newest line
+    useEffect(() => {
+        if (liveBoxRef.current) liveBoxRef.current.scrollTop = liveBoxRef.current.scrollHeight;
+    }, [liveLines, interimText]);
+
+    // Handle a final speech recognition result (or a typed demo line) —
+    // show it live, save it, and check it for bad words
     const processTranscript = (text) => {
         const trimmed = text.trim();
-        if (!trimmed || !sessionIdRef.current) return;
-        VigilKuraApi.addTranscript(sessionIdRef.current, trimmed).catch(console.error);
+        if (!trimmed) return;
+        setLiveLines((prev) => [...prev, { id: `${Date.now()}-${prev.length}`, text: trimmed }].slice(-MAX_LIVE_LINES));
+        // Saving needs a session; showing alerts on screen doesn't (e.g. if the session failed to start)
+        if (sessionIdRef.current) VigilKuraApi.addTranscript(sessionIdRef.current, trimmed).catch(console.error);
         if (!wordDetectionEnabledRef.current) return;
 
         const badWord = containsBadWord(trimmed, wordListRef.current);
@@ -309,6 +348,7 @@ const Monitor = () => {
             wordAlertTimerRef.current = setTimeout(() => setWordAlert(null), 5000);
         }
         if (wordChimeRef.current) playChime();
+        if (!sessionIdRef.current) return;
         const now = Date.now();
         const cooldownMs = (notifCooldownRef.current ?? 5) * 60 * 1000;
         const canNotify = !lastNotifTimeRef.current || now - lastNotifTimeRef.current >= cooldownMs;
@@ -379,17 +419,19 @@ const Monitor = () => {
         const childSettings = selectedChild?.settings || {};
         const wordList = childSettings.wordList?.length > 0 ? childSettings.wordList : DEFAULT_BAD_WORDS;
         const wordDetectionEnabled = childSettings.wordDetectionEnabled !== false;
-        const capturedWordAlertPopup = childSettings.wordAlertPopup !== false;
-        const capturedWordChime = childSettings.wordChime || false;
-        const wordNotifyChannel = getNotifyChannel(childSettings.wordEmail, childSettings.wordSms);
 
         wordDetectionEnabledRef.current = wordDetectionEnabled;
         wordListRef.current = wordList;
-        wordAlertPopupRef.current = capturedWordAlertPopup;
-        wordChimeRef.current = capturedWordChime;
-        wordNotifyChannelRef.current = wordNotifyChannel;
+        wordAlertPopupRef.current = childSettings.wordAlertPopup !== false;
+        wordChimeRef.current = childSettings.wordChime || false;
+        wordNotifyChannelRef.current = getNotifyChannel(childSettings.wordEmail, childSettings.wordSms);
         notifCooldownRef.current = childSettings.notifCooldown ?? 5;
         lastNotifTimeRef.current = null;
+
+        // Live transcript starts empty; flagged words are blurred only when detection is on
+        blurRegexRef.current = wordDetectionEnabled ? anyWordRegex(wordList) : null;
+        setLiveLines([]);
+        setInterimText('');
 
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         const recognition = new SpeechRecognition();
@@ -397,43 +439,15 @@ const Monitor = () => {
         recognition.interimResults = true;
         recognition.lang = 'en-US';
 
+        // Final results are saved and checked; interim results are only shown live
         recognition.onresult = (event) => {
+            let interim = '';
             for (let i = event.resultIndex; i < event.results.length; i++) {
                 const text = event.results[i][0].transcript;
-                // Interim results are ignored — only final results are saved and checked
-                if (event.results[i].isFinal) {
-                    if (sessionIdRef.current && text.trim()) {
-                        VigilKuraApi.addTranscript(sessionIdRef.current, text.trim()).catch(console.error);
-                    }
-                    if (wordDetectionEnabled) {
-                        const badWord = containsBadWord(text, wordList);
-                        if (badWord) {
-                            const trimmed = text.trim();
-                            const alertTime = new Date().toLocaleTimeString();
-                            setAlerts((prev) => [{ id: Date.now(), word: badWord, context: trimmed, time: alertTime }, ...prev]);
-                            if (capturedWordAlertPopup) {
-                                setWordAlert({ word: badWord, context: trimmed, time: alertTime });
-                                clearTimeout(wordAlertTimerRef.current);
-                                wordAlertTimerRef.current = setTimeout(() => setWordAlert(null), 5000);
-                            }
-                            if (capturedWordChime) playChime();
-                            if (sessionIdRef.current) {
-                                const now = Date.now();
-                                const cooldownMs = (notifCooldownRef.current ?? 5) * 60 * 1000;
-                                const canNotify = !lastNotifTimeRef.current || now - lastNotifTimeRef.current >= cooldownMs;
-                                if (canNotify && wordNotifyChannel) lastNotifTimeRef.current = now;
-                                VigilKuraApi.addDetection(
-                                    sessionIdRef.current,
-                                    badWord,
-                                    trimmed,
-                                    selectedChild?.name,
-                                    canNotify ? wordNotifyChannel : null,
-                                ).catch(console.error);
-                            }
-                        }
-                    }
-                }
+                if (event.results[i].isFinal) processTranscript(text);
+                else interim += text;
             }
+            setInterimText(interim);
         };
 
         recognition.onerror = (event) => console.error('Speech recognition error:', event.error);
@@ -492,6 +506,8 @@ const Monitor = () => {
 
         setIsListening(false);
         setKidMode(false);
+        setLiveLines([]);
+        setInterimText('');
         setPin('');
         setPinError('');
         setShowWarningBanner(false);
@@ -712,6 +728,32 @@ const Monitor = () => {
                     </Box>
                 )}
             </Box>
+
+            {/* Live transcript — visible in Kid Mode too, with flagged words blurred */}
+            {isListening && (
+                <Paper variant="outlined" sx={{ p: 1.5, mb: 3 }}>
+                    <Typography variant="caption" color="text.secondary">
+                        Live transcript
+                    </Typography>
+                    <Box ref={liveBoxRef} sx={{ maxHeight: 200, overflowY: 'auto', mt: 0.5 }}>
+                        {liveLines.length === 0 && !interimText && (
+                            <Typography variant="body2" color="text.disabled">
+                                Waiting for speech…
+                            </Typography>
+                        )}
+                        {liveLines.map((line) => (
+                            <Typography key={line.id} variant="body2">
+                                {blurWords(line.text, blurRegexRef.current)}
+                            </Typography>
+                        ))}
+                        {interimText && (
+                            <Typography variant="body2" color="text.secondary">
+                                {blurWords(interimText, blurRegexRef.current)}
+                            </Typography>
+                        )}
+                    </Box>
+                </Paper>
+            )}
 
             {/* Detections — hidden from child during monitoring (Kid Mode) */}
             {!kidMode && (
