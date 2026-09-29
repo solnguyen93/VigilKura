@@ -702,7 +702,7 @@ const Monitor = () => {
                         <TextField
                             size="small"
                             placeholder="Type to simulate speech"
-                            helperText="Demo account only — real accounts use the microphone."
+                            helperText="Demo account only — the mic is still listening; typing is an extra way to test."
                             value={devInput}
                             onChange={(e) => setDevInput(e.target.value)}
                             onKeyDown={(e) => {

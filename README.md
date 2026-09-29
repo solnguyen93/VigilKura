@@ -115,7 +115,7 @@ A test account is available on the sign-in page:
 - **Password:** password  
 - **PIN:** 0000
 
-The demo account is shared, so its profile, password, and PIN are locked and it never sends email or SMS. It also gets a text box while monitoring to simulate speech by typing, so you can try word detection without a microphone.
+The demo account is shared, so its profile, password, and PIN are locked and it never sends email or SMS. The microphone works as usual on the demo account, and it also gets a text box while monitoring to simulate speech by typing — handy for trying word detection without a mic.
 
 ## Tips for best results
 
