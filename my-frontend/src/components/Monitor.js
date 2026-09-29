@@ -659,7 +659,7 @@ const Monitor = () => {
         return (
             <Box sx={{ maxWidth: 600, mx: 'auto', mt: 8, p: 2, textAlign: 'center' }}>
                 <Typography variant="h6" color="error">
-                    Speech recognition is not supported in this browser. Please use Chrome.
+                    Speech recognition is not supported in this browser. Please use Chrome or Safari.
                 </Typography>
             </Box>
         );

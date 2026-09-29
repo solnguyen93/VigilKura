@@ -105,8 +105,8 @@ const Legal = () => {
             {/* Privacy: microphone and audio */}
             <Section icon={<MicOutlinedIcon color="primary" fontSize="small" />} title="Microphone & audio">
                 <BulletList items={[
-                    'The microphone is used only while monitoring is on, after you allow it in Chrome.',
-                    'Speech is turned into text by Chrome\'s built-in speech recognition, which sends the audio to Google\'s speech service.',
+                    'The microphone is used only while monitoring is on, after you allow it in your browser.',
+                    'Speech is turned into text by your browser\'s built-in speech recognition, which sends the audio to the browser maker\'s speech service: Google for Chrome, Apple for Safari.',
                     'VigilKura never records audio, and audio never reaches VigilKura\'s servers — only the resulting text is saved.',
                 ]} />
             </Section>
@@ -117,7 +117,7 @@ const Legal = () => {
                     VigilKura relies on these services to work. Each only receives what it needs:
                 </Typography>
                 <BulletList items={[
-                    'Google (through Chrome) — audio during monitoring, to turn speech into text.',
+                    'Google (through Chrome) or Apple (through Safari) — audio during monitoring, to turn speech into text.',
                     'OpenAI — the session transcript text when a session ends, to translate it into your chosen language.',
                     'Google (Gmail) — your email address and the alert or password-reset message, when an email is sent.',
                     'Render and Neon — host the app and store the database.',

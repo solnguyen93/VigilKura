@@ -35,7 +35,7 @@ const Landing = () => {
 
         <Section icon={<MicOutlinedIcon color="primary" fontSize="small" />} title="What it does">
             <Typography variant="body2" color="text.secondary">
-                Start monitoring in a Chrome tab on the computer your kid is using. VigilKura listens through
+                Start monitoring in a Chrome or Safari tab on the computer your kid is using. VigilKura listens through
                 the microphone, shows a live transcript, and checks what's said against a word list you set
                 for each child. If a flagged word comes up, you get an email. You can set a time limit
                 for each session, and you're alerted if the tab is closed early. Every session is saved as a
@@ -46,7 +46,7 @@ const Landing = () => {
         <Section icon={<TipsAndUpdatesOutlinedIcon color="primary" fontSize="small" />} title="Tips for best results">
             <Box component="ul" sx={{ pl: 2.5, mt: 0, mb: 0 }}>
                 {[
-                    'Use Chrome — speech recognition only works there.',
+                    'Use Chrome or Safari — speech recognition doesn\'t work reliably in other browsers, like Edge or Firefox.',
                     'To focus on your own child, have them use headphones or a headset. The mic then mainly hears them, while voices and sounds from a call, video, or game stay in the headphones.',
                     'Without headphones, the mic can also pick up people nearby or on a call, and audio from speakers — which may be flagged too.',
                     'Leave the VigilKura tab open. Closing it ends the session and alerts you.',
@@ -78,8 +78,8 @@ const Landing = () => {
             <Paper variant="outlined" sx={{ mt: 1.5, p: 1.5, bgcolor: 'action.hover' }}>
                 <Typography variant="body2" color="text.secondary">
                     <strong>VigilKura never records or stores audio.</strong> Speech is transcribed by
-                    Chrome's built-in speech recognition, which sends the audio to Google's speech service
-                    to turn it into text. Only that text reaches VigilKura and is stored. At the end of a
+                    your browser's built-in speech recognition, which sends the audio to the browser maker's
+                    speech service (Google for Chrome, Apple for Safari) to turn it into text. Only that text reaches VigilKura and is stored. At the end of a
                     session, the transcript is sent to OpenAI to translate it into your chosen language.
                     Email alerts are sent through Gmail. See Privacy & Terms for details.
                 </Typography>

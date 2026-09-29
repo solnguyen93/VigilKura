@@ -6,7 +6,7 @@ A web app that listens through the browser microphone during a child's screen ti
 
 ## Features
 
-- Real-time word detection via browser speech recognition (Chrome, English)
+- Real-time word detection via browser speech recognition (Chrome or Safari, English)
 - Live transcript while monitoring, with flagged words blurred
 - Custom word list per child with default profanity list
 - Email alerts on detection or when the session time limit is reached
@@ -141,7 +141,7 @@ The demo account is shared, so its profile, password, and PIN are locked and it 
 
 ## Tips for best results
 
-- Use Chrome — the Web Speech API only works there
+- Use Chrome or Safari — speech recognition doesn't work reliably in other browsers, like Edge or Firefox
 - To focus on your own child, have them use headphones or a headset — the mic mainly hears them, while voices and sounds from a call, video, or game stay in the headphones
 - Without headphones, the mic can also pick up people nearby or on a call, and audio from speakers, which may be flagged too
 - The mic may pick up other people's voices; make sure they know monitoring is on, since some states require everyone's consent
@@ -204,6 +204,6 @@ The demo account is shared, so its profile, password, and PIN are locked and it 
 
 ## Notes
 
-- Speech recognition only works in Chrome (Web Speech API)
-- VigilKura never records or stores audio. Chrome's speech recognition sends audio to Google's speech service for transcription; only the resulting text reaches the VigilKura backend
+- Speech recognition works in Chrome and Safari (Web Speech API); it doesn't work reliably in Edge or Firefox
+- VigilKura never records or stores audio. The browser's speech recognition sends audio to the browser maker's speech service for transcription (Google for Chrome, Apple for Safari); only the resulting text reaches the VigilKura backend
 - Monitoring someone without their knowledge may violate laws in your area — this tool is intended for parents monitoring their own minor children on devices they own
