@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../AuthContext';
 import LoginForm from './LoginForm';
 import RegisterForm from './RegisterForm';
-import { Container, Typography, Button, Box, Alert, Link as MuiLink, Paper, Chip } from '@mui/material';
+import { Container, Typography, Button, Box, Alert, Link as MuiLink, Paper } from '@mui/material';
 
 const VigilKura = () => {
     const { user, msg } = useAuth();
@@ -17,12 +17,9 @@ const VigilKura = () => {
     return (
         <Container maxWidth="sm">
             <Paper elevation={3} sx={{ p: '20px', mt: '20px', textAlign: 'center' }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                    <Typography variant="h4" component="h1">Welcome to VigilKura</Typography>
-                    <Chip label="Beta" size="small" color="warning" variant="outlined" />
-                </Box>
+                <Typography variant="h4" component="h1" sx={{ mb: 1 }}>Welcome to VigilKura</Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                    This is an early beta. Features may change and bugs may occur.
+                    Get an email when words you've flagged come up during your child's screen time.
                 </Typography>
                 {msg.message && (
                     <Alert severity={msg.type} sx={{ mt: '20px' }}>{msg.message}</Alert>

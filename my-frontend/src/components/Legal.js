@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Typography, Chip, Divider, Paper } from '@mui/material';
+import { Box, Typography, Divider, Paper } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import IconButton from '@mui/material/IconButton';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
@@ -50,7 +50,6 @@ const Legal = () => {
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
                 <IconButton size="small" onClick={() => navigate(-1)}><ArrowBackIcon /></IconButton>
                 <Typography variant="h4">Privacy & Terms</Typography>
-                <Chip label="Beta" size="small" color="warning" variant="outlined" />
             </Box>
             <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 2 }}>
                 Last updated: September 2026
@@ -93,7 +92,7 @@ const Legal = () => {
             {/* Privacy: what we collect */}
             <Section icon={<LockOutlinedIcon color="primary" fontSize="small" />} title="What we collect">
                 <BulletList items={[
-                    'Your account: name, username, email, password (hashed), and your phone number and monitor PIN (hashed) if you add them.',
+                    'Your account: name, username, email, password (hashed), and your monitor PIN (hashed) if you set one.',
                     'Your children: only the name you give each child, plus their word list, time limit, and alert settings.',
                     'Monitoring sessions: start and end times, text transcripts of what was said, and any flagged words with the sentence they appeared in.',
                 ]} />
@@ -120,7 +119,6 @@ const Legal = () => {
                 <BulletList items={[
                     'Google (through Chrome) — audio during monitoring, to turn speech into text.',
                     'OpenAI — the session transcript text when a session ends, to translate it into your chosen language.',
-                    'Twilio — your phone number and the alert message, only if you turn on text alerts.',
                     'Google (Gmail) — your email address and the alert or password-reset message, when an email is sent.',
                     'Render and Neon — host the app and store the database.',
                 ]} />
@@ -131,7 +129,7 @@ const Legal = () => {
                 <BulletList items={[
                     'The demo account is shared by everyone who tries it. Anything said or typed while using it can be seen by other visitors in its history.',
                     'Don\'t say or type anything private while using the demo. Create your own account for real use.',
-                    'The demo account never sends email or text alerts, and its profile can\'t be changed.',
+                    'The demo account never sends email alerts, and its profile can\'t be changed.',
                 ]} />
             </Section>
 
@@ -149,7 +147,6 @@ const Legal = () => {
             {/* Terms: limitations and liability */}
             <Section icon={<ScienceOutlinedIcon color="primary" fontSize="small" />} title="Limitations">
                 <BulletList items={[
-                    'VigilKura is in beta — features may change, break, or be reset.',
                     'Speech recognition isn\'t perfect and currently understands English only. Words can be missed or misheard, and alerts can be wrong.',
                     'Kid Mode locks the VigilKura browser tab, not the computer. Your child can still use other apps and tabs. Reloading the tab picks monitoring back up; closing it alerts you.',
                     'VigilKura supports parental supervision — it doesn\'t replace it.',
