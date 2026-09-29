@@ -24,7 +24,7 @@ A web app that listens through the browser microphone during a child's screen ti
 
 **Frontend:** React, Material UI, Web Speech API  
 **Backend:** Node.js, Express, PostgreSQL  
-**Services:** OpenAI (translation), Brevo in production / Gmail locally (email), Twilio (SMS)
+**Services:** OpenAI (translation), Gmail API (email), Twilio (SMS)
 
 ## Getting Started
 
@@ -73,13 +73,16 @@ FRONTEND_URL=http://localhost:3000
 # OpenAI (for session transcript translation)
 OPENAI_API_KEY=your_openai_key
 
-# Email (notifications and password reset)
-# In production, use Brevo — Render's free web services can't reach SMTP servers like Gmail.
-# When BREVO_API_KEY is set, email goes through Brevo's HTTP API; otherwise through Gmail SMTP.
-BREVO_API_KEY=your_brevo_api_key            # optional locally, needed on Render
-EMAIL_FROM=you@example.com                  # sender; must be a verified sender in Brevo
-GMAIL_USER=your_gmail@gmail.com             # local fallback
-GMAIL_APP_PASSWORD=your_gmail_app_password  # local fallback
+# Email (notifications and password reset) — sent from a Gmail account
+# Production uses the Gmail API over HTTPS, since Render's free web services block SMTP.
+# Used when all three GMAIL_CLIENT_ID/SECRET/REFRESH_TOKEN are set; see "Email setup" below.
+GMAIL_CLIENT_ID=your_oauth_client_id
+GMAIL_CLIENT_SECRET=your_oauth_client_secret
+GMAIL_REFRESH_TOKEN=your_refresh_token
+EMAIL_FROM=your_gmail@gmail.com             # must be the account the refresh token is for
+# Local fallback without the Gmail API: Gmail SMTP with an App Password
+GMAIL_USER=your_gmail@gmail.com
+GMAIL_APP_PASSWORD=your_gmail_app_password
 
 # Twilio (for SMS notifications — optional)
 TWILIO_ACCOUNT_SID=your_twilio_sid
@@ -92,6 +95,16 @@ The frontend reads the backend URL from `my-frontend/.env` (defaults to `http://
 ```bash
 cp my-frontend/.env.example my-frontend/.env
 ```
+
+### Email setup (Gmail API)
+
+1. In [Google Cloud Console](https://console.cloud.google.com/), signed in as the sending Gmail account, create a project and enable the **Gmail API**.
+2. Under **Google Auth Platform**, configure the consent screen (External), then under **Audience** click **Publish app** — apps left in "Testing" get refresh tokens that expire after 7 days.
+3. Under **Clients**, create an OAuth client of type **Desktop app** and copy its client ID and secret.
+4. Run `npm run gmail-auth` in `my-backend/` with `GMAIL_CLIENT_ID` and `GMAIL_CLIENT_SECRET` set, open the link, sign in as the sending account, and allow sending. Google may warn the app isn't verified — choose **Advanced → Go to (app)**, since it's your own app.
+5. Copy the printed `GMAIL_REFRESH_TOKEN` into your `.env` and your host's environment settings.
+
+The token only allows sending email (`gmail.send`), not reading the inbox.
 
 ### 4. Install dependencies and start
 

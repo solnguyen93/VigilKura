@@ -80,7 +80,7 @@ const Landing = () => {
                     Chrome's built-in speech recognition, which sends the audio to Google's speech service
                     to turn it into text. Only that text reaches VigilKura and is stored. At the end of a
                     session, the transcript is sent to OpenAI to translate it into your chosen language.
-                    Notifications are sent through Brevo (email) and Twilio (SMS). See Privacy & Terms for details.
+                    Notifications are sent through Gmail (email) and Twilio (SMS). See Privacy & Terms for details.
                 </Typography>
             </Paper>
         </Section>

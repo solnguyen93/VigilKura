@@ -121,7 +121,7 @@ const Legal = () => {
                     'Google (through Chrome) — audio during monitoring, to turn speech into text.',
                     'OpenAI — the session transcript text when a session ends, to translate it into your chosen language.',
                     'Twilio — your phone number and the alert message, only if you turn on text alerts.',
-                    'Brevo — your email address and the alert or password-reset message, when an email is sent.',
+                    'Google (Gmail) — your email address and the alert or password-reset message, when an email is sent.',
                     'Render and Neon — host the app and store the database.',
                 ]} />
             </Section>
