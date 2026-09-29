@@ -3,8 +3,7 @@ const router = express.Router();
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 const { ensureCorrectUser, ensureAdmin } = require('../middleware/auth');
-
-const DEMO_USERNAME = 'testuser';
+const { isDemo } = require('../demo');
 
 // Admin only — get all users
 // Must be registered before /:username or "all" would be treated as a username
@@ -32,11 +31,9 @@ router.put('/:username', ensureCorrectUser, async (req, res) => {
     const { username } = req.params;
     const data = req.body;
 
-    if (username === DEMO_USERNAME && data.password) {
-        return res.status(403).json({ message: "The demo account's password cannot be changed." });
-    }
-    if (username === DEMO_USERNAME && (data.pin || data.removePin)) {
-        return res.status(403).json({ message: "The demo account's PIN cannot be changed." });
+    // The demo account is shared — only its settings (translation language) can be changed
+    if (isDemo(username) && Object.keys(data).some((key) => key !== 'settings')) {
+        return res.status(403).json({ message: 'The demo account profile cannot be changed. Create your own account to try this.' });
     }
 
     try {
@@ -54,7 +51,7 @@ router.put('/:username', ensureCorrectUser, async (req, res) => {
 // Delete a user account
 router.delete('/:username', ensureCorrectUser, async (req, res) => {
     const { username } = req.params;
-    if (username === DEMO_USERNAME) {
+    if (isDemo(username)) {
         return res.status(403).json({ message: 'The demo account cannot be deleted.' });
     }
     try {

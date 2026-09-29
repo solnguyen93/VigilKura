@@ -227,8 +227,8 @@ const Profile = () => {
             setName(updated.name);
             setUser((prev) => ({ ...prev, name: updated.name }));
             setProfileMsg({ text: 'Name updated.', error: false });
-        } catch {
-            setProfileMsg({ text: 'Failed to update name.', error: true });
+        } catch (err) {
+            setProfileMsg({ text: err.response?.data?.message || 'Failed to update name.', error: true });
         }
     };
 
@@ -260,8 +260,8 @@ const Profile = () => {
             setPhoneEditing(false);
             setSmsConsent(false);
             setProfileMsg({ text: 'Phone updated.', error: false });
-        } catch {
-            setProfileMsg({ text: 'Failed to update phone.', error: true });
+        } catch (err) {
+            setProfileMsg({ text: err.response?.data?.message || 'Failed to update phone.', error: true });
         }
     };
 

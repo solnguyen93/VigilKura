@@ -5,6 +5,10 @@ const User = require('../models/User');
 const { authenticateBodyToken, ensureLoggedIn, ensureCorrectUser } = require('../middleware/auth');
 const { NotFoundError } = require('../expressError');
 const { sendNotification } = require('../notify');
+const { isDemo } = require('../demo');
+
+// Whether to send an email/SMS — never for the shared demo account
+const shouldNotify = (notify, username) => notify && notify !== 'none' && !isDemo(username);
 
 // Only continue if the logged-in user owns :sessionId
 async function ensureSessionOwner(req, res, next) {
@@ -49,7 +53,7 @@ router.post('/:sessionId/detections', ensureLoggedIn, ensureSessionOwner, async 
     try {
         const user = await User.getUserByUsername(res.locals.user.username);
         const detection = await Session.addDetection(sessionId, user.id, word, context);
-        if (notify && notify !== 'none') {
+        if (shouldNotify(notify, user.username)) {
             sendNotification({ notify, email: user.email, phone: user.phone, childName: childName || 'your child', word, context }).catch(console.error);
         }
         res.json(detection);
@@ -64,13 +68,15 @@ router.post('/notify-time-up', ensureLoggedIn, async (req, res) => {
     const { childName, notify } = req.body;
     try {
         const user = await User.getUserByUsername(res.locals.user.username);
-        await sendNotification({
-            notify,
-            email: user.email,
-            phone: user.phone,
-            childName: childName || 'your child',
-            type: 'time-up',
-        });
+        if (shouldNotify(notify, user.username)) {
+            await sendNotification({
+                notify,
+                email: user.email,
+                phone: user.phone,
+                childName: childName || 'your child',
+                type: 'time-up',
+            });
+        }
         res.json({ success: true });
     } catch (error) {
         console.error('Error sending time-up notification:', error);
@@ -86,7 +92,7 @@ router.post('/:sessionId/abandoned', authenticateBodyToken, ensureLoggedIn, ensu
     try {
         const user = await User.getUserByUsername(res.locals.user.username);
         await Session.end(sessionId);
-        if (notify && notify !== 'none') {
+        if (shouldNotify(notify, user.username)) {
             sendNotification({ notify, email: user.email, phone: user.phone, childName: childName || 'your child', type: 'abandoned' }).catch(console.error);
         }
         res.json({ success: true });
