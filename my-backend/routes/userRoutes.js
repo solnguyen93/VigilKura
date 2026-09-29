@@ -31,8 +31,8 @@ router.put('/:username', ensureCorrectUser, async (req, res) => {
     const { username } = req.params;
     const data = req.body;
 
-    // The demo account is shared — only its settings (translation language) can be changed
-    if (isDemo(username) && Object.keys(data).some((key) => key !== 'settings')) {
+    // The demo account is shared — its profile, password, PIN, and language are locked
+    if (isDemo(username)) {
         return res.status(403).json({ message: 'The demo account profile cannot be changed. Create your own account to try this.' });
     }
 

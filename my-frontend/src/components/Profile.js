@@ -316,11 +316,13 @@ const Profile = () => {
 
     // Save the parent's preferred translate language — used for AI summary and transcript translation
     const handleSaveLanguage = async (lang) => {
+        const previous = preferredLanguage;
         setPreferredLanguage(lang);
         try {
             await VigilKuraApi.updateUser(username, { settings: { preferredLanguage: lang } });
-        } catch {
-            setProfileMsg({ text: 'Failed to save language preference.', error: true });
+        } catch (err) {
+            setPreferredLanguage(previous);
+            setProfileMsg({ text: err.response?.data?.message || 'Failed to save language preference.', error: true });
         }
     };
 
