@@ -25,6 +25,9 @@ import MicOffIcon from '@mui/icons-material/MicOff';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 
+// Shared demo account — gets a text box to simulate speech (see my-backend/demo.js)
+const DEMO_USERNAME = 'testuser';
+
 // Play a 4-note ascending chime using the Web Audio API
 const playChime = () => {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -677,12 +680,13 @@ const Monitor = () => {
                         ● Listening...
                     </Typography>
                 )}
-                {/* Test input — simulate speech by typing, e.g. to try detection without a mic */}
-                {isListening && (
+                {/* Demo-only test input — lets demo visitors simulate speech without a mic */}
+                {isListening && user?.username === DEMO_USERNAME && (
                     <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
                         <TextField
                             size="small"
                             placeholder="Type to simulate speech"
+                            helperText="Demo account only — real accounts use the microphone."
                             value={devInput}
                             onChange={(e) => setDevInput(e.target.value)}
                             onKeyDown={(e) => {

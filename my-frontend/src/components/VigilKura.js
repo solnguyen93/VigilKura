@@ -45,6 +45,9 @@ const VigilKura = () => {
                                 <Typography variant="body2" sx={{ mt: 0.5 }}><strong>Username:</strong> testuser</Typography>
                                 <Typography variant="body2"><strong>Password:</strong> password</Typography>
                                 <Typography variant="body2"><strong>PIN:</strong> 0000</Typography>
+                                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
+                                    No mic? The demo account can type sentences to simulate speech while monitoring.
+                                </Typography>
                             </Box>
                             <LoginForm />
                             <Box mt={2}>
