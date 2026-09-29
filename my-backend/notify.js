@@ -1,16 +1,7 @@
-// Notification helpers — sends email (via Gmail/nodemailer) and SMS (via Twilio)
-// Called from sessionRoutes when a bad word is detected or screen time is up
-const nodemailer = require('nodemailer');
+// Notification helpers — sends email (via mailer.js) and SMS (via Twilio)
+// Called from sessionRoutes when a bad word is detected, screen time is up, or the tab is closed
 const twilio = require('twilio');
-
-// Gmail transporter — authenticates with an App Password, not the account password
-const transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-        user: process.env.GMAIL_USER,
-        pass: process.env.GMAIL_APP_PASSWORD,
-    },
-});
+const { sendEmail } = require('./mailer');
 
 // Twilio client — only initialized if credentials are present in env vars
 // If missing (e.g. local dev without Twilio set up), SMS calls are skipped silently
@@ -78,12 +69,8 @@ async function sendNotification({ notify, email, phone, childName, word, context
     // Queue email if requested and an email address is available
     if ((notify === 'email' || notify === 'both') && email) {
         promises.push(
-            transporter.sendMail({
-                from: `"VigilKura" <${process.env.GMAIL_USER}>`,
-                to: email,
-                subject,
-                text: body,
-            }).catch((err) => console.error('Email send failed:', err))
+            sendEmail({ to: email, subject, text: body })
+                .catch((err) => console.error('Email send failed:', err.message))
         );
     }
 

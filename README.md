@@ -24,7 +24,7 @@ A web app that listens through the browser microphone during a child's screen ti
 
 **Frontend:** React, Material UI, Web Speech API  
 **Backend:** Node.js, Express, PostgreSQL  
-**Services:** OpenAI (translation), Gmail/Nodemailer (email), Twilio (SMS)
+**Services:** OpenAI (translation), Brevo in production / Gmail locally (email), Twilio (SMS)
 
 ## Getting Started
 
@@ -73,9 +73,13 @@ FRONTEND_URL=http://localhost:3000
 # OpenAI (for session transcript translation)
 OPENAI_API_KEY=your_openai_key
 
-# Gmail (for email notifications and password reset)
-GMAIL_USER=your_gmail@gmail.com
-GMAIL_APP_PASSWORD=your_gmail_app_password
+# Email (notifications and password reset)
+# In production, use Brevo — Render's free web services can't reach SMTP servers like Gmail.
+# When BREVO_API_KEY is set, email goes through Brevo's HTTP API; otherwise through Gmail SMTP.
+BREVO_API_KEY=your_brevo_api_key            # optional locally, needed on Render
+EMAIL_FROM=you@example.com                  # sender; must be a verified sender in Brevo
+GMAIL_USER=your_gmail@gmail.com             # local fallback
+GMAIL_APP_PASSWORD=your_gmail_app_password  # local fallback
 
 # Twilio (for SMS notifications — optional)
 TWILIO_ACCOUNT_SID=your_twilio_sid

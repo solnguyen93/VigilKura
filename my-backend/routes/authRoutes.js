@@ -3,13 +3,8 @@ const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const User = require('../models/User');
 const pool = require('../db');
-const nodemailer = require('nodemailer');
+const { sendEmail } = require('../mailer');
 const router = express.Router();
-
-const transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: { user: process.env.GMAIL_USER, pass: process.env.GMAIL_APP_PASSWORD },
-});
 
 // Route for user registration
 router.post('/register', async (req, res) => {
@@ -57,12 +52,13 @@ router.post('/forgot-password', async (req, res) => {
         );
 
         const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password?token=${token}`;
-        await transporter.sendMail({
-            from: `"VigilKura" <${process.env.GMAIL_USER}>`,
+        // Sent in the background — the response is the same either way, so the page never
+        // waits on the mail provider (and can't hang if it's slow or unreachable)
+        sendEmail({
             to: email,
             subject: 'VigilKura — Reset your password',
             text: `You requested a password reset.\n\nClick the link below to set a new password (expires in 30 minutes):\n\n${resetUrl}\n\nIf you did not request this, ignore this email.`,
-        });
+        }).catch((err) => console.error('Password reset email failed:', err.message));
 
         res.json({ message: 'If that email exists, a reset link has been sent.' });
     } catch (err) {
