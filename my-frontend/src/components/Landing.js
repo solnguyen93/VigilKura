@@ -78,8 +78,9 @@ const Landing = () => {
                 <Typography variant="body2" color="text.secondary">
                     <strong>VigilKura never records or stores audio.</strong> Speech is transcribed by
                     Chrome's built-in speech recognition, which sends the audio to Google's speech service
-                    to turn it into text. Only that text reaches VigilKura and is stored. Notifications are
-                    sent through Gmail and Twilio (SMS).
+                    to turn it into text. Only that text reaches VigilKura and is stored. At the end of a
+                    session, the transcript is sent to OpenAI to translate it into your chosen language.
+                    Notifications are sent through Gmail and Twilio (SMS). See Privacy & Terms for details.
                 </Typography>
             </Paper>
         </Section>
