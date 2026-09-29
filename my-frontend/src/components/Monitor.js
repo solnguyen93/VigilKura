@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../AuthContext';
 import VigilKuraApi, { BASE_URL } from '../api.js';
 import { DEFAULT_BAD_WORDS } from './Settings.js';
+import PasswordField from './PasswordField';
 import {
     Box,
     Button,
@@ -900,9 +901,8 @@ const Monitor = () => {
                                 sx={{ mb: 2 }}
                             />
                         ) : (
-                            <TextField
+                            <PasswordField
                                 fullWidth
-                                type="password"
                                 label="Password"
                                 value={password}
                                 onChange={(e) => {
