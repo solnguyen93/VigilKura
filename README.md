@@ -119,6 +119,16 @@ npm start
 
 The frontend runs on `http://localhost:3000` and the backend on `http://localhost:5000`.
 
+## Deployment
+
+The live demo runs on free tiers:
+
+- **Frontend:** Render static site (https://vigilkura.onrender.com)
+- **Backend:** Render web service. It sleeps when idle, so the first request after a quiet period can take 20 to 30 seconds.
+- **Database:** Neon (serverless PostgreSQL)
+
+In production (`NODE_ENV=production`) the backend connects with `DATABASE_URL` over SSL instead of the `PG*` variables above, so set `DATABASE_URL` to your Neon connection string in the backend's environment settings.
+
 ## Demo Account
 
 A test account is available on the sign-in page:
