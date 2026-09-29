@@ -3,6 +3,7 @@ import { useAuth } from '../AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { TextField, Button, Box, Alert, Typography, Select, MenuItem, InputAdornment, FormControlLabel, Checkbox, Link } from '@mui/material';
 import VigilKuraApi from '../api.js';
+import PasswordField from './PasswordField';
 
 const COUNTRY_CODES = [
     { code: '+1', label: '🇺🇸 +1' },
@@ -114,23 +115,21 @@ const RegisterForm = () => {
                 error={!!errors.email}
                 helperText={errors.email}
             />
-            <TextField
+            <PasswordField
                 fullWidth
                 margin="normal"
                 label="Password *"
                 name="password"
-                type="password"
                 value={form.password}
                 onChange={handleChange}
                 error={!!errors.password}
                 helperText={errors.password}
             />
-            <TextField
+            <PasswordField
                 fullWidth
                 margin="normal"
                 label="Confirm Password *"
                 name="confirmPassword"
-                type="password"
                 value={form.confirmPassword}
                 onChange={handleChange}
                 error={!!errors.confirmPassword}

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import VigilKuraApi from '../api.js';
 import { useNavigate, useParams } from 'react-router-dom';
 import useDataFetching from '../hooks/useDataFetching';
+import PasswordField from './PasswordField';
 import { useAuth } from '../AuthContext';
 import {
     Box, Typography, Button, Divider, Chip, Alert,
@@ -489,13 +490,13 @@ const Profile = () => {
                                 {passwordMsg.text}
                             </Alert>
                         )}
-                        <TextField fullWidth size="small" label="Current Password" type="password"
+                        <PasswordField fullWidth size="small" label="Current Password"
                             autoComplete="current-password"
                             value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} sx={{ mb: 1.5 }} />
-                        <TextField fullWidth size="small" label="New Password" type="password"
+                        <PasswordField fullWidth size="small" label="New Password"
                             autoComplete="new-password"
                             value={newPassword} onChange={(e) => setNewPassword(e.target.value)} sx={{ mb: 1.5 }} />
-                        <TextField fullWidth size="small" label="Confirm New Password" type="password"
+                        <PasswordField fullWidth size="small" label="Confirm New Password"
                             autoComplete="new-password"
                             value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} sx={{ mb: 1.5 }} />
                         <Box sx={{ display: 'flex', gap: 1 }}>

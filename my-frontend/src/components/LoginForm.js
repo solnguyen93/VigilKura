@@ -3,6 +3,7 @@ import { useAuth } from '../AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { TextField, Button, Box, Alert } from '@mui/material';
 import MuiLink from '@mui/material/Link';
+import PasswordField from './PasswordField';
 
 const LoginForm = () => {
     const [username, setUsername] = useState('');
@@ -30,9 +31,9 @@ const LoginForm = () => {
                 autoComplete="username" autoFocus
                 value={username} onChange={(e) => setUsername(e.target.value)}
             />
-            <TextField
+            <PasswordField
                 fullWidth margin="normal" label="Password" name="password"
-                type="password" autoComplete="current-password"
+                autoComplete="current-password"
                 value={password} onChange={(e) => setPassword(e.target.value)}
             />
             <Box sx={{ textAlign: 'right', mt: 0.5 }}>

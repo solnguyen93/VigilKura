@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { TextField, Button, Box, Alert, Typography, IconButton } from '@mui/material';
+import { Button, Box, Alert, Typography, IconButton } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import VigilKuraApi from '../api.js';
+import PasswordField from './PasswordField';
 
 const ResetPasswordForm = () => {
     const [searchParams] = useSearchParams();
@@ -62,13 +63,13 @@ const ResetPasswordForm = () => {
             </Box>
             {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
             <Box component="form" onSubmit={handleSubmit}>
-                <TextField
-                    fullWidth margin="normal" label="New Password" type="password"
+                <PasswordField
+                    fullWidth margin="normal" label="New Password"
                     autoFocus autoComplete="new-password"
                     value={password} onChange={(e) => setPassword(e.target.value)}
                 />
-                <TextField
-                    fullWidth margin="normal" label="Confirm Password" type="password"
+                <PasswordField
+                    fullWidth margin="normal" label="Confirm Password"
                     autoComplete="new-password"
                     value={confirm} onChange={(e) => setConfirm(e.target.value)}
                 />
