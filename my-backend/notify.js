@@ -36,7 +36,7 @@ async function sendNotification({ notify, email, phone, childName, word, context
     const subject = isTimeUp
         ? `VigilKura — Screen time is up for ${childName}`
         : isAbandoned
-        ? `VigilKura — Monitoring was stopped for ${childName}`
+        ? `VigilKura — Monitoring was interrupted for ${childName}`
         : `VigilKura Alert — "${word}" detected while monitoring ${childName}`;
     const body = isTimeUp
         ? [
@@ -48,11 +48,12 @@ async function sendNotification({ notify, email, phone, childName, word, context
           ].join('\n')
         : isAbandoned
         ? [
-            `Monitoring was stopped for ${childName}.`,
+            `Monitoring was interrupted for ${childName}.`,
             ``,
             `  Time: ${timeStr}`,
             ``,
-            `The browser tab was closed while monitoring was active.`,
+            `The browser tab was closed or reloaded while monitoring was active.`,
+            `If it was reloaded, monitoring resumed automatically as a new session.`,
             ``,
             `Log in to VigilKura to review the session.`,
           ].join('\n')
@@ -70,7 +71,7 @@ async function sendNotification({ notify, email, phone, childName, word, context
     const smsBody = isTimeUp
         ? `VigilKura [${timeStr}]: Screen time is up for ${childName}.`
         : isAbandoned
-        ? `VigilKura [${timeStr}]: Monitoring was stopped — ${childName} closed the browser tab.`
+        ? `VigilKura [${timeStr}]: Monitoring for ${childName} was interrupted — the browser tab was closed or reloaded.`
         : `VigilKura [${timeStr}]: "${word}" detected while monitoring ${childName}. Context: "${context}"`;
 
     const promises = [];

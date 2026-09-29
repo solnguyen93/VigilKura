@@ -237,6 +237,22 @@ const Monitor = () => {
     const wordAlertTimerRef = useRef(null);
     const sessionStartRef = useRef(null);
 
+    // Child being monitored — a ref so callbacks created at session start always see it,
+    // including when a session resumes after a reload before selectedChild state updates
+    const activeChildRef = useRef(null);
+    // Latest startListening, so the mount effect can resume a session without depending on it
+    const startListeningRef = useRef(null);
+    // Chrome refused to start the mic without a click (possible right after a reload)
+    const micBlockedRef = useRef(false);
+    const [micBlocked, setMicBlocked] = useState(false);
+
+    // The active session is saved in localStorage so reloading the page resumes it
+    // instead of silently ending monitoring and unlocking Kid Mode
+    const saveActiveSession = (updates) => {
+        const current = JSON.parse(localStorage.getItem(lsKey('activeSession')) || '{}');
+        localStorage.setItem(lsKey('activeSession'), JSON.stringify({ ...current, ...updates }));
+    };
+
     // Refs so the speech recognition callback always has up-to-date settings
     const wordDetectionEnabledRef = useRef(false);
     const wordListRef = useRef([]);
@@ -282,11 +298,13 @@ const Monitor = () => {
         VigilKuraApi.getChildren()
             .then((kids) => {
                 setChildren(kids);
-                if (kids.length > 0) {
-                    const savedId = localStorage.getItem(lsKey('selectedChildId'));
-                    const match = savedId ? kids.find((c) => String(c.id) === savedId) : null;
-                    setSelectedChild(match || kids[0]);
-                }
+                const active = JSON.parse(localStorage.getItem(lsKey('activeSession')) || 'null');
+                const savedId = active ? String(active.childId) : localStorage.getItem(lsKey('selectedChildId'));
+                const match = savedId ? kids.find((c) => String(c.id) === savedId) : null;
+                const child = match || kids[0] || null;
+                if (child) setSelectedChild(child);
+                // A session was active when the page reloaded — go straight back into it
+                if (active && !recognitionRef.current) startListeningRef.current(match || null, active);
             })
             .catch(() => {});
 
@@ -296,31 +314,37 @@ const Monitor = () => {
         return () => clearInterval(timerRef.current);
     }, [user, navigate, fetchLastSession, lsKey]);
 
-    // Block browser back button and warn on tab close while in Kid Mode
+    // Block browser back button, warn on tab close, and alert the parent if the page is left while in Kid Mode
     useEffect(() => {
         if (!kidMode) return;
         const handlePopState = () => window.history.pushState(null, '', window.location.href);
+        // Shows the browser's "Leave site?" prompt — the page may still stay if it's cancelled
         const handleBeforeUnload = (e) => {
             e.preventDefault();
             e.returnValue = '';
-            if (sessionIdRef.current) {
-                // sendBeacon can't set headers, so the JWT goes in the body
-                const params = new URLSearchParams({
-                    token: localStorage.getItem('token') || '',
-                    childName: selectedChild?.name || '',
-                    notify: wordNotifyChannelRef.current || '',
-                });
-                navigator.sendBeacon(`${BASE_URL}/sessions/${sessionIdRef.current}/abandoned`, params);
-            }
+        };
+        // Fires only once the page is actually going away (closed or reloaded), so a cancelled
+        // prompt doesn't end the session. A reload resumes monitoring as a new session.
+        const handlePageHide = () => {
+            if (!sessionIdRef.current) return;
+            // sendBeacon can't set headers, so the JWT goes in the body
+            const params = new URLSearchParams({
+                token: localStorage.getItem('token') || '',
+                childName: activeChildRef.current?.name || '',
+                notify: wordNotifyChannelRef.current || '',
+            });
+            navigator.sendBeacon(`${BASE_URL}/sessions/${sessionIdRef.current}/abandoned`, params);
         };
         window.history.pushState(null, '', window.location.href);
         window.addEventListener('popstate', handlePopState);
         window.addEventListener('beforeunload', handleBeforeUnload);
+        window.addEventListener('pagehide', handlePageHide);
         return () => {
             window.removeEventListener('popstate', handlePopState);
             window.removeEventListener('beforeunload', handleBeforeUnload);
+            window.removeEventListener('pagehide', handlePageHide);
         };
-    }, [kidMode, selectedChild?.name]);
+    }, [kidMode]);
 
     // Keep the live transcript scrolled to the newest line
     useEffect(() => {
@@ -353,25 +377,32 @@ const Monitor = () => {
         const cooldownMs = (notifCooldownRef.current ?? 5) * 60 * 1000;
         const canNotify = !lastNotifTimeRef.current || now - lastNotifTimeRef.current >= cooldownMs;
         if (canNotify && wordNotifyChannelRef.current) lastNotifTimeRef.current = now;
-        VigilKuraApi.addDetection(sessionIdRef.current, badWord, trimmed, selectedChild?.name, canNotify ? wordNotifyChannelRef.current : null).catch(
+        VigilKuraApi.addDetection(sessionIdRef.current, badWord, trimmed, activeChildRef.current?.name, canNotify ? wordNotifyChannelRef.current : null).catch(
             console.error,
         );
     };
 
     // Start the screen time countdown timer
-    const startScreenTimeTimer = (settings) => {
+    // flags.warned / flags.timeUp carry over from before a reload so alerts don't repeat
+    const startScreenTimeTimer = (settings, flags = {}) => {
         const limitSecs = settings.durationEnabled ? (settings.durationHours || 0) * 3600 + (settings.durationMinutes || 0) * 60 : 0;
         const warnSecs = settings.warningEnabled && limitSecs > 0 ? limitSecs - (settings.warningMinutes || 5) * 60 : 0;
+        let warned = !!flags.warned;
+        let timeUp = !!flags.timeUp;
 
         setWarningMinutesLeft(settings.warningMinutes || 5);
         setShowWarningBanner(false);
-        setShowTimeUpBanner(false);
+        // Time already ran out before the reload — keep showing the banner, without re-alerting
+        setShowTimeUpBanner(timeUp && settings.timeUpAlert !== false);
 
         timerRef.current = setInterval(() => {
             setSessionSeconds((s) => {
                 const next = s + 1;
 
-                if (limitSecs > 0 && warnSecs > 0 && next === warnSecs) {
+                // >= rather than === so a resumed session that skipped past a threshold still fires once
+                if (!warned && warnSecs > 0 && next >= warnSecs && next < limitSecs) {
+                    warned = true;
+                    saveActiveSession({ warned: true });
                     setShowWarningBanner(true);
                     setTimeout(() => setShowWarningBanner(false), 5000);
                     if (Notification.permission === 'granted') {
@@ -379,7 +410,9 @@ const Monitor = () => {
                     }
                 }
 
-                if (limitSecs > 0 && next === limitSecs) {
+                if (!timeUp && limitSecs > 0 && next >= limitSecs) {
+                    timeUp = true;
+                    saveActiveSession({ timeUp: true });
                     if (settings.timeUpAlert !== false) setShowTimeUpBanner(true);
                     if (settings.timeUpChime) playChime();
                     if (Notification.permission === 'granted') {
@@ -387,7 +420,7 @@ const Monitor = () => {
                     }
                     const channel = getNotifyChannel(settings.timeUpEmail, settings.timeUpSms);
                     if (channel) {
-                        VigilKuraApi.notifyTimeUp(selectedChild?.name, channel).catch(console.error);
+                        VigilKuraApi.notifyTimeUp(activeChildRef.current?.name, channel).catch(console.error);
                     }
                 }
 
@@ -396,15 +429,23 @@ const Monitor = () => {
         }, 1000);
     };
 
-    const startListening = async () => {
+    // Start monitoring a child. `resume` is the saved active session when continuing after a reload —
+    // it keeps the original start time so the screen time clock doesn't reset.
+    const startListening = async (child, resume = null) => {
+        activeChildRef.current = child;
         try {
-            const session = await VigilKuraApi.startSession(selectedChild?.id || null);
+            const session = await VigilKuraApi.startSession(child?.id || null);
             sessionIdRef.current = session.id;
         } catch (error) {
             console.error('Failed to start session:', error);
         }
 
-        sessionStartRef.current = new Date().toISOString();
+        const startedAtMs = resume?.startedAt || Date.now();
+        sessionStartRef.current = new Date(startedAtMs).toISOString();
+        localStorage.setItem(
+            lsKey('activeSession'),
+            JSON.stringify({ childId: child?.id ?? null, startedAt: startedAtMs, warned: !!resume?.warned, timeUp: !!resume?.timeUp }),
+        );
 
         // Clear previous last session data
         setLastSession(null);
@@ -416,7 +457,7 @@ const Monitor = () => {
         localStorage.removeItem(lsKey('lastSessionTranslatedLanguage'));
 
         // Capture settings once at session start — used inside the speech recognition callback
-        const childSettings = selectedChild?.settings || {};
+        const childSettings = child?.settings || {};
         const wordList = childSettings.wordList?.length > 0 ? childSettings.wordList : DEFAULT_BAD_WORDS;
         const wordDetectionEnabled = childSettings.wordDetectionEnabled !== false;
 
@@ -450,18 +491,47 @@ const Monitor = () => {
             setInterimText(interim);
         };
 
-        recognition.onerror = (event) => console.error('Speech recognition error:', event.error);
+        recognition.onerror = (event) => {
+            console.error('Speech recognition error:', event.error);
+            // Mic not allowed yet (e.g. resumed after a reload without a click) — stop the
+            // auto-restart loop in onend and show a "Resume listening" button instead
+            if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+                micBlockedRef.current = true;
+                setMicBlocked(true);
+            }
+        };
         recognition.onend = () => {
-            if (recognitionRef.current) recognition.start();
+            if (recognitionRef.current && !micBlockedRef.current) recognition.start();
         };
 
         recognitionRef.current = recognition;
-        recognition.start();
+        micBlockedRef.current = false;
+        setMicBlocked(false);
+        try {
+            recognition.start();
+        } catch (error) {
+            console.error('Speech recognition failed to start:', error);
+            micBlockedRef.current = true;
+            setMicBlocked(true);
+        }
         setIsListening(true);
         setKidMode(true);
-        setSessionSeconds(0);
+        setSessionSeconds(Math.max(0, Math.floor((Date.now() - startedAtMs) / 1000)));
         setShowAllDetected(false);
-        startScreenTimeTimer(childSettings);
+        startScreenTimeTimer(childSettings, resume || {});
+    };
+    startListeningRef.current = startListening;
+
+    // Retry the mic after Chrome blocked it — this click counts as the user gesture it wanted
+    const resumeMic = () => {
+        if (!recognitionRef.current) return;
+        micBlockedRef.current = false;
+        setMicBlocked(false);
+        try {
+            recognitionRef.current.start();
+        } catch (error) {
+            console.error('Speech recognition failed to start:', error);
+        }
     };
 
     const stopListening = () => {
@@ -470,11 +540,15 @@ const Monitor = () => {
             recognitionRef.current.stop();
             recognitionRef.current = null;
         }
+        // Stopped with the PIN/password — nothing to resume on the next load
+        localStorage.removeItem(lsKey('activeSession'));
+        micBlockedRef.current = false;
+        setMicBlocked(false);
 
         if (sessionIdRef.current) {
             const meta = {
                 sessionId: sessionIdRef.current,
-                childName: selectedChild?.name || null,
+                childName: activeChildRef.current?.name || null,
                 startedAt: sessionStartRef.current,
                 duration: sessionSeconds,
             };
@@ -681,7 +755,7 @@ const Monitor = () => {
                         color="primary"
                         size="large"
                         startIcon={<MicIcon />}
-                        onClick={startListening}
+                        onClick={() => startListening(selectedChild)}
                         disabled={children.length > 1 && !selectedChild}
                     >
                         Start Monitoring
@@ -691,10 +765,16 @@ const Monitor = () => {
                         Stop Monitoring
                     </Button>
                 )}
-                {isListening && (
+                {isListening && !micBlocked && (
                     <Typography variant="body2" color="success.main" sx={{ fontWeight: 'bold' }}>
                         ● Listening...
                     </Typography>
+                )}
+                {/* Chrome wants a click before the mic restarts (e.g. after a reload) */}
+                {isListening && micBlocked && (
+                    <Button variant="outlined" color="warning" startIcon={<MicIcon />} onClick={resumeMic}>
+                        Resume listening
+                    </Button>
                 )}
                 {/* Demo-only test input — lets demo visitors simulate speech without a mic */}
                 {isListening && user?.username === DEMO_USERNAME && (
