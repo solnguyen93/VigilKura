@@ -52,9 +52,17 @@ async function sendWithGmail({ to, subject, text }) {
 }
 
 // Send a plain-text email — throws if it couldn't be sent
+// Logs the outcome either way so Render's logs show whether email is actually going out
 async function sendEmail({ to, subject, text }) {
-    if (process.env.BREVO_API_KEY) return sendWithBrevo({ to, subject, text });
-    return sendWithGmail({ to, subject, text });
+    const provider = process.env.BREVO_API_KEY ? 'Brevo' : 'Gmail';
+    try {
+        if (provider === 'Brevo') await sendWithBrevo({ to, subject, text });
+        else await sendWithGmail({ to, subject, text });
+        console.log(`Email sent via ${provider} → to: ${to} — "${subject}"`);
+    } catch (err) {
+        console.error(`Email via ${provider} failed → to: ${to} — ${err.message}`);
+        throw err;
+    }
 }
 
 module.exports = { sendEmail };
